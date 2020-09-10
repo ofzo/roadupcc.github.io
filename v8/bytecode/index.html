@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.roadup.cc","root":"/","scheme":"Muse","version":"8.0.0","exturl":false,"sidebar":{"position":"left","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="V8 字节码Ignition Bytecode">
+<meta property="og:type" content="article">
+<meta property="og:title" content="bytecode">
+<meta property="og:url" content="http://www.roadup.cc/v8/bytecode/index.html">
+<meta property="og:site_name" content="时光荏苒">
+<meta property="og:description" content="V8 字节码Ignition Bytecode">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://www.roadup.cc/v8/bytecode/Untitled.png">
+<meta property="og:image" content="http://www.roadup.cc/v8/bytecode/Untitled%201.png">
+<meta property="og:image" content="http://www.roadup.cc/v8/bytecode/Untitled%202.png">
+<meta property="article:published_time" content="2020-09-09T23:40:09.000Z">
+<meta property="article:modified_time" content="2020-09-09T23:54:30.449Z">
+<meta property="article:author" content="roadup">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.roadup.cc/v8/bytecode/Untitled.png">
+
+
+<link rel="canonical" href="http://www.roadup.cc/v8/bytecode/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>bytecode | 时光荏苒</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">时光荏苒</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#V8-%E5%AD%97%E8%8A%82%E7%A0%81"><span class="nav-number">1.</span> <span class="nav-text">V8 字节码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Ignition-Bytecode"><span class="nav-number">1.1.</span> <span class="nav-text">Ignition Bytecode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TurboFan-Pipeline"><span class="nav-number">1.2.</span> <span class="nav-text">TurboFan Pipeline</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Ignition-Bytecode-1"><span class="nav-number">1.3.</span> <span class="nav-text">Ignition Bytecode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81"><span class="nav-number">1.4.</span> <span class="nav-text">字节码</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">博主</p>
+  <div class="site-description" itemprop="description">君子知命不惧，日日自新</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://www.roadup.cc/v8/bytecode/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="博主">
+      <meta itemprop="description" content="君子知命不惧，日日自新">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="时光荏苒">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          bytecode
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2020-09-10 07:40:09 / 修改时间：07:54:30" itemprop="dateCreated datePublished" datetime="2020-09-10T07:40:09+08:00">2020-09-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="V8-字节码"><a href="#V8-字节码" class="headerlink" title="V8 字节码"></a>V8 字节码</h1><h2 id="Ignition-Bytecode"><a href="#Ignition-Bytecode" class="headerlink" title="Ignition Bytecode"></a>Ignition Bytecode</h2><a id="more"></a>
+<p><img src="Untitled.png" alt="Untitled.png"></p>
+<h2 id="TurboFan-Pipeline"><a href="#TurboFan-Pipeline" class="headerlink" title="TurboFan Pipeline"></a>TurboFan Pipeline</h2><p><img src="Untitled%201.png" alt="Untitled%201.png"></p>
+<h2 id="Ignition-Bytecode-1"><a href="#Ignition-Bytecode-1" class="headerlink" title="Ignition Bytecode"></a>Ignition Bytecode</h2><p><img src="Untitled%202.png" alt="Untitled%202.png"></p>
+<h2 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h2><p><a target="_blank" rel="noopener" href="https://github.com/v8/v8/blob/master/src/interpreter/bytecodes.h">v8/v8</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/v8/v8/blob/4b9b23521e6fd42373ebbcb20ebe03bf445494f9/src/interpreter/interpreter-generator.cc">v8/v8</a></p>
+<!-- [Table of Bytecode](https://www.notion.so/76ac5b9764cf4e038968165d1dad023c) -->
+<p>LdaZero    Load literal ‘0’ into the accumulator.<br>加载字面量0到累加器<br>LdaSmi <imm>    Load an integer literal into the accumulator as a Smi.<br>加载一个整数字面量到累加器作为一个 Smi(小整数)<br>LdaConstant <idx>    Load constant literal at |idx| in the constant pool into the accumulator.<br>加载常量池中idx（索引）位置的常量到累计器<br>LdaUndefined    Load Undefined into the accumulator.<br>加载Undefined到累加器<br>LdaNull    Load Null into the accumulator.<br>加载Null到累加器<br>LdaTheHole    Load TheHole into the accumulator.<br>加载 TheHole（空洞）到累加器<br>LdaTrue    Load True into the accumulator.<br>加载True到累加器<br>LdaFalse    Load False into the accumulator.<br>加载False到累加器<br>Ldar <src>    Load accumulator with value from register <src>.<br>从寄存器的<src>加载值到累加器<br>Star <dst>    Store accumulator to register <dst>.<br>存储累加器到寄存器 <dst><br>Mov <src> <dst>    Stores the value of register <src> to register <dst>.<br>存储一个寄存器<src>的值到寄存器<dst><br>LdaGlobal <name_index> <slot>    Load the global with name in constant pool entry <name_index> into the<br>accumulator using FeedBackVector slot <slot> outside of a typeof.<br>通过常量池条目<name_index>的名字加载一个全局数据到累加器<br>LdaGlobalInsideTypeof <name_index> <slot>    Load the global with name in constant pool entry <name_index> into the<br>accumulator using FeedBackVector slot <slot> inside of a typeof.<br>StaGlobal <name_index> <slot>    Store the value in the accumulator into the global with name in constant pool<br>entry <name_index> using FeedBackVector slot <slot>.<br>LdaContextSlot <context> <slot_index> <depth>    Load the object in |slot_index| of the context at |depth| in the context<br>chain starting at |context| into the accumulator.<br>LdaImmutableContextSlot <context> <slot_index> <depth>    Load the object in |slot_index| of the context at |depth| in the context<br>chain starting at |context| into the accumulator.<br>LdaCurrentContextSlot <slot_index>    Load the object in |slot_index| of the current context into the accumulator.<br>LdaImmutableCurrentContextSlot <slot_index>    Load the object in |slot_index| of the current context into the accumulator.<br>StaContextSlot <context> <slot_index> <depth>    Stores the object in the accumulator into |slot_index| of the context at<br>|depth| in the context chain starting at |context|.<br>StaCurrentContextSlot <slot_index>    Stores the object in the accumulator into |slot_index| of the current context.<br>LdaLookupSlot <name_index>    Lookup the object with the name in constant pool entry |name_index| dynamically.<br>LdaLookupSlotInsideTypeof <name_index>    Lookup the object with the name in constant pool entry |name_index|<br>dynamically without causing a NoReferenceError.<br>LdaLookupSlot <name_index>    Lookup the object with the name in constant pool entry |name_index| dynamically.<br>LdaLookupSlotInsideTypeof <name_index>    Lookup the object with the name in constant pool entry |name_index| dynamically without causing a NoReferenceError.<br>LdaLookupGlobalSlot <name_index> <feedback_slot> <depth>    Lookup the object with the name in constant pool entry |name_index| dynamically.<br>LdaLookupGlobalSlotInsideTypeof <name_index> <feedback_slot> <depth>    Lookup the object with the name in constant pool entry |name_index|<br>dynamically without causing a NoReferenceError.<br>StaLookupSlotSloppy <name_index> <flags>    Store the object in accumulator to the object with the name in constant pool entry |name_index|.<br>LdaNamedProperty <object> <name_index> <slot>    Calls the LoadIC at FeedBackVector slot <slot> for <object> and the name at constant pool entry <name_index>.<br>LdaPropertyNofeedback <object> <slot>    Calls the GetProperty builtin for <object> and the key in the accumulator.<br>KeyedLoadIC <object> <slot>    Calls the KeyedLoadIC at FeedBackVector slot <slot> for <object> and the key in the accumulator.<br>StaNamedProperty <object> <name_index> <slot>    Calls the StoreIC at FeedBackVector slot <slot> for <object> and the name in constant pool entry <name_index> with the value in the accumulator.<br>StaNamedOwnProperty <object> <name_index> <slot>    Calls the StoreOwnIC at FeedBackVector slot <slot> for <object> and the name in constant pool entry <name_index> with the value in the accumulator.<br>StaNamedPropertyNoFeedback <object> <name_index>    Calls the SetPropertyBuiltin for <object> and the name in constant pool entry <name_index> with the value in the accumulator.<br>StaKeyedProperty <object> <key> <slot>    Calls the KeyedStoreIC at FeedbackVector slot <slot> for <object> and the key <key> with the value in the accumulator.<br>StaInArrayLiteral <array> <index> <slot>    Calls the StoreInArrayLiteralIC at FeedbackVector slot <slot> for <array> and  the key <index> with the value in the accumulator.<br>StaDataPropertyInLiteral <object> <name> <flags>    Define a property <name> with value from the accumulator in <object>. Property attributes and whether set_function_name are stored in DataPropertyInLiteralFlags <flags>.</p>
+<p>This definition is not observable and is used only for definitions in object or class literals.<br>LdaModuleVariable <cell_index> <depth>    Load the contents of a module variable into the accumulator. The variable is identified by <cell_index>. <depth> is the depth of the current context relative to the module context.<br>StaModuleVariable <cell_index> <depth>    Store accumulator to the module variable identified by <cell_index>. <depth> is the depth of the current context relative to the module context.<br>PushContext <context>    Saves the current context in <context>, and pushes the accumulator as the new current context.<br>PopContext <context>    Pops the current context and sets <context> as the new context.<br>Add <src>    Add register <src> to accumulator.<br>Sub <src>    Subtract register <src> from accumulator.<br>Mul <src>    Multiply accumulator by register <src>.<br>Div <src>    Divide register <src> by accumulator.<br>Mod <src>    Modulo register <src> by accumulator.<br>Exp <src>    Exponentiate register <src> (base) with accumulator (exponent).<br>AddSmi <imm>    Adds an immediate value <imm> to the value in the accumulator.<br>SubSmi <imm>    Subtracts an immediate value <imm> from the value in the accumulator.<br>MulSmi <imm>    Multiplies an immediate value <imm> to the value in the accumulator.<br>DivSmi <imm>    Divides the value in the accumulator by immediate value <imm>.<br>ModSmi <imm>    Modulo accumulator by immediate value <imm>.<br>ExpSmi <imm>    Exponentiate accumulator (base) with immediate value <imm> (exponent).<br>BitwiseOr <src>    BitwiseOr register <src> to accumulator.<br>BitwiseXor <src>    BitwiseXor register <src> to accumulator.<br>BitwiseAnd <src>    BitwiseAnd register <src> to accumulator.<br>ShiftLeft <src>    Left shifts register <src> by the count specified in the accumulator.<br>Register <src> is converted to an int32 and the accumulator to uint32 before the operation. 5 lsb bits from the accumulator are used as count<br>i.e. <src> &lt;&lt; (accumulator &amp; 0x1F).<br>ShiftRight <src>    Right shifts register <src> by the count specified in the accumulator.<br>Result is sign extended. Register <src> is converted to an int32 and the accumulator to uint32 before the operation. 5 lsb bits from the accumulator are used as count i.e. <src> &gt;&gt; (accumulator &amp; 0x1F).<br>ShiftRightLogical <src>    Right Shifts register <src> by the count specified in the accumulator.<br>Result is zero-filled. The accumulator and register <src> are converted to uint32 before the operation 5 lsb bits from the accumulator are used as count i.e. <src> &lt;&lt; (accumulator &amp; 0x1F).<br>BitwiseOrSmi <imm>    BitwiseOrSmi accumulator with <imm>.<br>BitwiseXorSmi <imm>    BitwiseXorSmi accumulator with <imm>.<br>BitwiseAndSmi <imm>    BitwiseAndSmi accumulator with <imm>.<br>BitwiseNot <feedback_slot>    Perform bitwise-not on the accumulator.<br>ShiftLeftSmi <imm>    Left shifts accumulator by the count specified in <imm>.<br>The accumulator is converted to an int32 before the operation. The 5 lsb bits from <imm> are used as count i.e. <src> &lt;&lt; (<imm> &amp; 0x1F).<br>ShiftRightSmi <imm>    Right shifts accumulator by the count specified in <imm>. Result is sign extended. The accumulator is converted to an int32 before the operation. The 5 lsb bits from <imm> are used as count i.e. <src> &gt;&gt; (<imm> &amp; 0x1F).<br>ShiftRightLogicalSmi <imm>    Right shifts accumulator by the count specified in <imm>. Result is zero extended. The accumulator is converted to an int32 before the operation. The 5 lsb bits from <imm> are used as count i.e. <src> &gt;&gt;&gt; (<imm> &amp; 0x1F).<br>Negate <feedback_slot>    Perform arithmetic negation on the accumulator.<br>ToName <dst>    Convert the object referenced by the accumulator to a name.<br>ToNumber <slot>    Convert the object referenced by the accumulator to a number.<br>ToNumeric <slot>    Convert the object referenced by the accumulator to a numeric.<br>ToObject <dst>    Convert the object referenced by the accumulator to a JSReceiver.<br>ToString    Convert the accumulator to a String.<br>Inc    Increments value in the accumulator by one.<br>Dec    Decrements value in the accumulator by one.<br>LogicalNot    Perform logical-not on the accumulator, first casting the accumulator to a boolean value if required. ToBooleanLogicalNot<br>LogicalNot    Perform logical-not on the accumulator, which must already be a boolean value.<br>TypeOf    Load the accumulator with the string representating type of the object in the accumulator.<br>DeletePropertyStrict    Delete the property specified in the accumulator from the object referenced by the register operand following strict mode semantics.<br>DeletePropertySloppy    Delete the property specified in the accumulator from the object referenced by the register operand following sloppy mode semantics.<br>GetSuperConstructor    Get the super constructor from the object referenced by the accumulator.<br>The result is stored in register |reg|.<br>Call <callable> <receiver> <arg_count> <feedback_slot_id>    Call a JSfunction or Callable in |callable| with the |receiver| and |arg_count| arguments in subsequent registers. Collect type feedback into |feedback_slot_id|<br>CallRuntime <function_id> <first_arg> <arg_count>    Call the runtime function |function_id| with the first argument in register |first_arg| and |arg_count| arguments in subsequent registers.<br>InvokeIntrinsic <function_id> <first_arg> <arg_count>    Implements the semantic equivalent of calling the runtime function |function_id| with the first argument in |first_arg| and |arg_count|  arguments in subsequent registers.<br>CallRuntimeForPair <function_id> <first_arg> <arg_count> <first_return>    Call the runtime function |function_id| which returns a pair, with the first argument in register |first_arg| and |arg_count| arguments in subsequent registers. Returns the result in <first_return> and &lt;first_return + 1&gt;<br>CallJSRuntime <context_index> <receiver> <arg_count>    Call the JS runtime function that has the |context_index| with the receiver in register |receiver| and |arg_count| arguments in subsequent registers.<br>CallWithSpread <callable> <first_arg> <arg_count>    Call a JSfunction or Callable in |callable| with the receiver in |first_arg| and |arg_count - 1| arguments in subsequent registers. The final argument is always a spread.<br>ConstructWithSpread <first_arg> <arg_count>    Call the constructor in |constructor| with the first argument in register |first_arg| and |arg_count| arguments in subsequent registers. The final argument is always a spread. The new.target is in the accumulator.<br>Construct <constructor> <first_arg> <arg_count>    Call operator construct with |constructor| and the first argument in register |first_arg| and |arg_count| arguments in subsequent registers. The new.target is in the accumulator.<br>TestEqual <src>    Test if the value in the <src> register equals the accumulator.<br>TestEqualStrict <src>    Test if the value in the <src> register is strictly equal to the accumulator.<br>TestLessThan <src>    Test if the value in the <src> register is less than the accumulator.<br>TestGreaterThan <src>    Test if the value in the <src> register is greater than the accumulator.<br>TestLessThanOrEqual <src>    Test if the value in the <src> register is less than or equal to the accumulator.<br>TestGreaterThanOrEqual <src>    Test if the value in the <src> register is greater than or equal to the accumulator.<br>TestReferenceEqual <src>    Test if the value in the <src> register is equal to the accumulator by means of simple comparison. For SMIs and simple reference comparisons.<br>TestIn <src> <feedback_slot>    Test if the object referenced by the register operand is a property of the object referenced by the accumulator.<br>TestInstanceOf <src> <feedback_slot>    Test if the object referenced by the <src> register is an an instance of type referenced by the accumulator.<br>TestUndetectable    Test if the value in the accumulator is undetectable (null, undefined or<br>document.all).<br>TestNull    Test if the value in accumulator is strictly equal to null.<br>TestUndefined    Test if the value in the accumulator is strictly equal to undefined.<br>TestTypeOf <literal_flag>    Tests if the object in the <accumulator> is typeof the literal represented by |literal_flag|.<br>Jump <imm>    Jump by the number of bytes represented by the immediate operand |imm|.<br>JumpConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool.<br>JumpIfTrue <imm>    Jump by the number of bytes represented by an immediate operand if the accumulator contains true. This only works for boolean inputs, and will misbehave if passed arbitrary input values.<br>JumpIfTrueConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the accumulator contains true. This only works for boolean inputs, and will misbehave if passed arbitrary input values.<br>JumpIfFalse <imm>    Jump by the number of bytes represented by an immediate operand if the accumulator contains false. This only works for boolean inputs, and will misbehave if passed arbitrary input values.<br>JumpIfFalseConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the accumulator contains false. This only works for boolean inputs, and will misbehave if passed arbitrary input values.<br>JumpIfToBooleanTrue <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is true when the object is cast to boolean.<br>JumpIfToBooleanTrueConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is true when the object is cast to boolean.<br>JumpIfToBooleanFalse <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is false when the object is cast to boolean.<br>JumpIfToBooleanFalseConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is false when the object is cast to boolean.<br>JumpIfNull <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is the null constant.<br>JumpIfNullConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is the null constant.<br>JumpIfNotNull <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is not the null constant.<br>JumpIfNotNullConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is not the null constant.<br>JumpIfUndefined <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is the undefined constant.<br>JumpIfUndefinedConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is the undefined constant.<br>JumpIfNotUndefined <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is not the undefined constant.<br>JumpIfNotUndefinedConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is not the undefined constant.<br>JumpIfJSReceiver <imm>    Jump by the number of bytes represented by an immediate operand if the object referenced by the accumulator is a JSReceiver.<br>JumpIfJSReceiverConstant <idx>    Jump by the number of bytes in the Smi in the |idx| entry in the constant pool if the object referenced by the accumulator is a JSReceiver.<br>JumpLoop <imm> <loop_depth>    Jump by the number of bytes represented by the immediate operand |imm|. Also performs a loop nesting check and potentially triggers OSR in case the current OSR level matches (or exceeds) the specified |loop_depth|.<br>SwitchOnSmiNoFeedback <table_start> <table_length> <case_value_base>    Jump by the number of bytes defined by a Smi in a table in the constant pool,  where the table starts at |table_start| and has |table_length| entries. The table is indexed by the accumulator, minus |case_value_base|. If the case_value falls outside of the table |table_length|, fall-through to the next bytecode.<br>CreateRegExpLiteral <pattern_idx> <literal_idx> <flags>    Creates a regular expression literal for literal index <literal_idx> with <flags> and the pattern in <pattern_idx>.<br>CreateArrayLiteral <element_idx> <literal_idx> <flags>    Creates an array literal for literal index <literal_idx> with CreateArrayLiteral flags <flags> and constant elements in <element_idx>.<br>CreateEmptyArrayLiteral <literal_idx>    Creates an empty JSArray literal for literal index <literal_idx>.<br>CreateArrayFromIterable    Spread the given iterable from the accumulator into a new JSArray.<br>Spread the given iterable from the accumulator into a new JSArray.    Creates an object literal for literal index <literal_idx> with CreateObjectLiteralFlags <flags> and constant elements in <element_idx>.<br>CreateEmptyObjectLiteral    Creates an empty JSObject literal.<br>CloneObject <source_idx> <flags> <feedback_slot>    Allocates a new JSObject with each enumerable own property copied from {source}, converting getters into data properties.<br>GetTemplateObject <descriptor_idx> <literal_idx>    Creates the template to pass for tagged templates and returns it in the accumulator, creating and caching the site object on-demand as per the specification.<br>CreateClosure <index> <slot> <flags>    Creates a new closure for SharedFunctionInfo at position |index| in the constant pool and with pretenuring controlled by |flags|.<br>CreateBlockContext <index>    Creates a new block context with the scope info constant at |index|.<br>CreateCatchContext <exception> <scope_info_idx>    Creates a new context for a catch block with the |exception| in a register and the ScopeInfo at |scope_info_idx|.<br>CreateFunctionContext <scope_info_idx> <slots>    Creates a new context with number of |slots| for the function closure.<br>CreateEvalContext <scope_info_idx> <slots>    Creates a new context with number of |slots| for an eval closure.<br>Creates a new context with number of |slots| for an eval closure.    Creates a new context with the ScopeInfo at |scope_info_idx| for a with-statement with the object in |register|.<br>CreateMappedArguments    Creates a new mapped arguments object.<br>CreateUnmappedArguments    Creates a new unmapped arguments object.<br>CreateRestParameter    Creates a new rest parameter array.<br>StackCheck    Performs a stack guard check.<br>SetPendingMessage    Sets the pending message to the value in the accumulator, and returns the previous pending message in the accumulator.<br>Throw    Throws the exception in the accumulator.<br>ReThrow    Re-throws the exception in the accumulator.<br>Abort <abort_reason>    Aborts execution (via a call to the runtime function).<br>Return    Return the value in the accumulator.<br>ThrowReferenceErrorIfHole <variable_name>    Throws an exception if the value in the accumulator is TheHole.<br>ThrowSuperNotCalledIfHole    Throws an exception if the value in the accumulator is TheHole.<br>ThrowSuperAlreadyCalledIfNotHole    Throws SuperAleradyCalled exception if the value in the accumulator is not TheHole.<br>Debugger    Call runtime to handle debugger statement.<br>DebugBreak    Call runtime to handle a debug break.<br>IncBlockCounter <slot>    Increment the execution count for the given slot. Used for block code coverage.<br>ForInEnumerate <receiver>    Enumerates the enumerable keys of the |receiver| and either returns the map of the |receiver| if it has a usable enum cache or a fixed array with the keys to enumerate in the accumulator.<br>ForInPrepare <cache_info_triple>    Returns state for for..in loop execution based on the enumerator in the accumulator register, which is the result of calling ForInEnumerate  on a JSReceiver object.<br>The result is output in registers |cache_info_triple| to |cache_info_triple + 2|, with the registers holding cache_type, cache_array, and cache_length respectively.<br>ForInNext <receiver> <index> <cache_info_pair>    Returns the next enumerable property in the the accumulator.<br>ForInContinue <index> <cache_length>    Returns false if the end of the enumerable properties has been reached.<br>ForInStep <index>    Increments the loop counter in register |index| and stores the result in the accumulator.<br>Wide    Prefix bytecode indicating next bytecode has wide (16-bit) operands.<br>ExtraWide    Prefix bytecode indicating next bytecode has extra-wide (32-bit) operands.<br>Illegal    An invalid bytecode aborting execution if dispatched.<br>SuspendGenerator <generator> <first input register> <register count> <suspend_id>    Stores the parameters and the register file in the generator. Also stores the current context, |suspend_id|, and the current bytecode offset (for debugging purposes) into the generator. Then, returns the value in the accumulator.<br>SwitchOnGeneratorState <generator> <table_start> <table_length>    If |generator| is undefined, falls through. Otherwise, loads the generator’s state (overwriting it with kGeneratorExecuting), sets the context to the generator’s resume context, and performs state dispatch on the generator’s state by looking up the generator state in a jump table in the constant pool, starting at |table_start|, and of length |table_length|.<br>ResumeGenerator <generator> <first output register> <register count>    Imports the register file stored in the generator and marks the generator state as executing.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/v8/Ignition/" rel="prev" title="Ignition 设计文档">
+                  <i class="fa fa-chevron-left"></i> Ignition 设计文档
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">博主</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
