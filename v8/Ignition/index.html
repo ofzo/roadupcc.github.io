@@ -22,12 +22,12 @@
     var CONFIG = {"hostname":"www.roadup.cc","root":"/","scheme":"Muse","version":"8.0.0","exturl":false,"sidebar":{"position":"left","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
   </script>
 
-  <meta name="description" content="Ignition设计文档原文链接（https:&#x2F;&#x2F;docs.google.com&#x2F;document&#x2F;d&#x2F;11T2CRex9hXxoJwbYqVQ32yIPMh0uouUZLdyrtmMoL44&#x2F;edit?ts&#x3D;56f27d9d#） V8的 full-codegen 编译器生成的机器码太啰嗦，因此对于经典页面的堆内存使用量会大大增加（先前的分析显示代码空间大约占用15～20%的JS堆空间） 除了造成">
+  <meta name="description" content="Ignition设计文档原文链接V8具有一个称为“Ignition”的解释器。Ignition是使用TurboFan的后端编写的基于寄存器的快速底层解释器。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Ignition 设计文档">
 <meta property="og:url" content="http://www.roadup.cc/v8/Ignition/index.html">
 <meta property="og:site_name" content="时光荏苒">
-<meta property="og:description" content="Ignition设计文档原文链接（https:&#x2F;&#x2F;docs.google.com&#x2F;document&#x2F;d&#x2F;11T2CRex9hXxoJwbYqVQ32yIPMh0uouUZLdyrtmMoL44&#x2F;edit?ts&#x3D;56f27d9d#） V8的 full-codegen 编译器生成的机器码太啰嗦，因此对于经典页面的堆内存使用量会大大增加（先前的分析显示代码空间大约占用15～20%的JS堆空间） 除了造成">
+<meta property="og:description" content="Ignition设计文档原文链接V8具有一个称为“Ignition”的解释器。Ignition是使用TurboFan的后端编写的基于寄存器的快速底层解释器。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://www.roadup.cc/v8/Ignition/Untitled.png">
 <meta property="og:image" content="http://www.roadup.cc/v8/Ignition/Untitled%201.png">
@@ -37,8 +37,9 @@
 <meta property="og:image" content="http://www.roadup.cc/v8/Ignition/Untitled%204.png">
 <meta property="og:image" content="http://www.roadup.cc/v8/Ignition/Untitled%205.png">
 <meta property="article:published_time" content="2020-09-01T20:49:42.000Z">
-<meta property="article:modified_time" content="2020-09-10T00:34:42.573Z">
+<meta property="article:modified_time" content="2020-09-10T14:10:15.645Z">
 <meta property="article:author" content="roadup">
+<meta property="article:tag" content="前端，v8, Ignition, 字节码">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://www.roadup.cc/v8/Ignition/Untitled.png">
 
@@ -169,7 +170,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives">
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -240,7 +241,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-09-10 00:34:42" itemprop="dateModified" datetime="2020-09-10T00:34:42+00:00">2020-09-10</time>
+        <time title="修改时间：2020-09-10 14:10:15" itemprop="dateModified" datetime="2020-09-10T14:10:15+00:00">2020-09-10</time>
       </span>
 
   
@@ -253,11 +254,12 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="Ignition设计文档"><a href="#Ignition设计文档" class="headerlink" title="Ignition设计文档"></a>Ignition设计文档</h1><p>原文链接（<a target="_blank" rel="noopener" href="https://docs.google.com/document/d/11T2CRex9hXxoJwbYqVQ32yIPMh0uouUZLdyrtmMoL44/edit?ts=56f27d9d#%EF%BC%89">https://docs.google.com/document/d/11T2CRex9hXxoJwbYqVQ32yIPMh0uouUZLdyrtmMoL44/edit?ts=56f27d9d#）</a></p>
-<p>V8的 full-codegen 编译器生成的机器码太啰嗦，因此对于经典页面的堆内存使用量会大大增加（先前的分析显示代码空间大约占用15～20%的JS堆空间）</p>
-<p>除了造成内存浪费， 这还意味着V8尝试尽力避免生成它认为不会执行的代码。它实现懒解析和编译，函数通常只在首次执行时编译。这在页面启动有着大量的开销，因为延迟编译需要函数源码重解析。（例如： <a target="_blank" rel="noopener" href="http://crbug.com/593477">crbug.com/593477</a>）</p>
+        <h1 id="Ignition设计文档"><a href="#Ignition设计文档" class="headerlink" title="Ignition设计文档"></a>Ignition设计文档</h1><p><a target="_blank" rel="noopener" href="https://docs.google.com/document/d/11T2CRex9hXxoJwbYqVQ32yIPMh0uouUZLdyrtmMoL44/edit?ts=56f27d9d#">原文链接</a><br>V8具有一个称为“Ignition”的解释器。Ignition是使用TurboFan的后端编写的基于寄存器的快速底层解释器。</p>
 <a id="more"></a>
 
+
+<p>V8的 full-codegen 编译器生成的机器码太啰嗦，因此对于经典页面的堆内存使用量会大大增加（先前的分析显示代码空间大约占用15～20%的JS堆空间）</p>
+<p>除了造成内存浪费， 这还意味着V8尝试尽力避免生成它认为不会执行的代码。它实现懒解析和编译，函数通常只在首次执行时编译。这在页面启动有着大量的开销，因为延迟编译需要函数源码重解析。（例如： <a target="_blank" rel="noopener" href="http://crbug.com/593477">crbug.com/593477</a>）</p>
 <p>Ignition 项目的目标是去构建一个V8的解释器，它执行低级字节码， 因此能使一次运行或者非热代码以字节码的形式更紧凑的保存。由于字节码更小， 编译时间更少，我们也能更渴望初始化编译，大大改善启动时间。 另一个优点是字节码能直接传输给Turbofan图生成器，从而避免TurboFan在优化函数时需要重新解析源码。</p>
 <p>Ignition项目的目标</p>
 <ul>
@@ -442,6 +444,9 @@
 
           <div class="post-nav">
             <div class="post-nav-item">
+                <a href="/frontend/performance/" rel="prev" title="性能优化">
+                  <i class="fa fa-chevron-left"></i> 性能优化
+                </a>
             </div>
             <div class="post-nav-item">
                 <a href="/v8/bytecode/" rel="next" title="bytecode">
