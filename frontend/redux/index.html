@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.roadup.cc","root":"/","scheme":"Muse","version":"8.0.0","exturl":false,"sidebar":{"position":"left","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="Redux 源码解析Redux is a predictable state container for JavaScript apps  Redux 官方文档Github 仓库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redux 源码解析">
+<meta property="og:url" content="http://www.roadup.cc/frontend/redux/index.html">
+<meta property="og:site_name" content="时光荏苒">
+<meta property="og:description" content="Redux 源码解析Redux is a predictable state container for JavaScript apps  Redux 官方文档Github 仓库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-0.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-1.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-2.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-3.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-4.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-5.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-6.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-7.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-8.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-9.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-10.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-11.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-12.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-13.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-14.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-15.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-16.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-17.png">
+<meta property="og:image" content="http://www.roadup.cc/images/pasted-18.png">
+<meta property="article:published_time" content="2018-11-19T11:18:00.000Z">
+<meta property="article:modified_time" content="2020-09-10T23:13:34.006Z">
+<meta property="article:author" content="roadup">
+<meta property="article:tag" content="lighthouse">
+<meta property="article:tag" content="redux">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.roadup.cc/images/pasted-0.png">
+
+
+<link rel="canonical" href="http://www.roadup.cc/frontend/redux/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redux 源码解析 | 时光荏苒</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">时光荏苒</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">君子知命不惧，日日自新</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>首页</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Redux-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">Redux 源码解析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#redux-%E7%9A%84%E4%BD%BF%E7%94%A8%E6%96%B9%E5%BC%8F"><span class="nav-number">1.1.</span> <span class="nav-text">redux 的使用方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%85%E6%9C%89reducer%E6%97%B6"><span class="nav-number">1.1.1.</span> <span class="nav-text">仅有reducer时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8C%85%E5%90%ABpreloadedState-%E5%92%8Cmiddleware"><span class="nav-number">1.1.2.</span> <span class="nav-text">包含preloadedState 和middleware</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%AD%E7%9C%8B%E7%9C%8Bredux"><span class="nav-number">1.1.3.</span> <span class="nav-text">浏览器中看看redux</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#redux-%E6%BA%90%E7%A0%81"><span class="nav-number">1.1.4.</span> <span class="nav-text">redux 源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createStore"><span class="nav-number">1.1.5.</span> <span class="nav-text">createStore</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#combineReducers"><span class="nav-number">1.1.6.</span> <span class="nav-text">combineReducers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#applyMiddleware"><span class="nav-number">1.1.7.</span> <span class="nav-text">applyMiddleware</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#compose"><span class="nav-number">1.1.8.</span> <span class="nav-text">compose</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch%E5%8C%85%E8%A3%85%E5%9B%BE"><span class="nav-number">1.1.9.</span> <span class="nav-text">dispatch包装图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD%EF%BC%9A"><span class="nav-number">1.2.</span> <span class="nav-text">结语：</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">roadup</p>
+  <div class="site-description" itemprop="description">君子知命不惧，日日自新</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://www.roadup.cc/frontend/redux/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="roadup">
+      <meta itemprop="description" content="君子知命不惧，日日自新">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="时光荏苒">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redux 源码解析
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-11-19 11:18:00" itemprop="dateCreated datePublished" datetime="2018-11-19T11:18:00+00:00">2018-11-19</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-09-10 23:13:34" itemprop="dateModified" datetime="2020-09-10T23:13:34+00:00">2020-09-10</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%BA%90%E7%A0%81/" itemprop="url" rel="index"><span itemprop="name">源码</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Redux-源码解析"><a href="#Redux-源码解析" class="headerlink" title="Redux 源码解析"></a>Redux 源码解析</h1><p>Redux is a predictable state container for JavaScript apps</p>
+<p><img src="/images/pasted-0.png" alt="upload successful"></p>
+<p><a target="_blank" rel="noopener" href="https://redux.js.org/">Redux 官方文档</a><br><a target="_blank" rel="noopener" href="https://github.com/reduxjs/redux">Github 仓库</a></p>
+<a id="more"></a>
+<h2 id="redux-的使用方式"><a href="#redux-的使用方式" class="headerlink" title="redux 的使用方式"></a>redux 的使用方式</h2><p><a target="_blank" rel="noopener" href="https://github.com/reduxjs/redux/tree/master/examples">https://github.com/reduxjs/redux/tree/master/examples</a></p>
+<h3 id="仅有reducer时"><a href="#仅有reducer时" class="headerlink" title="仅有reducer时"></a>仅有reducer时</h3><p><a target="_blank" rel="noopener" href="https://github.com/reduxjs/redux/blob/master/examples/counter/src/index.js">https://github.com/reduxjs/redux/blob/master/examples/counter/src/index.js</a><br><img src="/images/pasted-1.png" alt="upload successful"></p>
+<h3 id="包含preloadedState-和middleware"><a href="#包含preloadedState-和middleware" class="headerlink" title="包含preloadedState 和middleware"></a>包含preloadedState 和middleware</h3><p><a target="_blank" rel="noopener" href="https://github.com/reduxjs/redux/blob/master/examples/real-world/src/store/configureStore.prod.js">https://github.com/reduxjs/redux/blob/master/examples/real-world/src/store/configureStore.prod.js</a></p>
+<p><img src="/images/pasted-2.png" alt="upload successful"></p>
+<h3 id="浏览器中看看redux"><a href="#浏览器中看看redux" class="headerlink" title="浏览器中看看redux"></a>浏览器中看看redux</h3><p><img src="/images/pasted-3.png" alt="upload successful"></p>
+<p>creteStore的的执行结果：</p>
+<p><img src="/images/pasted-4.png" alt="upload successful"></p>
+<h3 id="redux-源码"><a href="#redux-源码" class="headerlink" title="redux 源码"></a>redux 源码</h3><p>看源码的插件： Octotree    Octohint    Sourcegraph</p>
+<p>读npm包的第一步： 看 package.json, 主要是scripts和依赖， 如果是node命令行工具之类的还需要看main和bin</p>
+<p><img src="/images/pasted-5.png" alt="upload successful"></p>
+<p>由此可见 redux 的打包使用的是rollup， <a target="_blank" rel="noopener" href="https://www.rollupjs.com/guide/zh">https://www.rollupjs.com/guide/zh</a></p>
+<p>下面看rollup的配置文件</p>
+<p><img src="/images/pasted-6.png" alt="upload successful"></p>
+<p>input，是入口文件 src/index.js</p>
+<p><img src="/images/pasted-7.png" alt="upload successful"></p>
+<p>这几个导出的属性， 正式我们在浏览器中看到的那几个属性，接下来解释分解各个属性</p>
+<h3 id="createStore"><a href="#createStore" class="headerlink" title="createStore"></a>createStore</h3><p>createStore的函数签名：</p>
+<p><img src="/images/pasted-8.png" alt="upload successful"></p>
+<p>reducer是必选参数， enhancer和preloadedState是可选参数， 源码在src/createStore.js</p>
+<p>文件导出一个默认的函数就是createStore， 并返回了我们常用的几个函数</p>
+<p>先看它接收的第一个参数，reducer， 它是通过 combineReducers 创建的</p>
+<h3 id="combineReducers"><a href="#combineReducers" class="headerlink" title="combineReducers"></a>combineReducers</h3><p>这个函数最后又返回一个函数：</p>
+<p><img src="/images/pasted-9.png" alt="upload successful"></p>
+<p>既然combine的结果是个函数，我们没有代码去调用这个函数，而且这个函数作为参数传给了createStore， 那么必然在某个地方，这个函数会被redux来调用</p>
+<p>在dispatch函数中，我们看到了这个函数的调用， 调用结果就是新的state，这也是只有dispatch才能更新state的原因</p>
+<p><img src="/images/pasted-10.png" alt="upload successful"></p>
+<p>我们继续往下看，在调用这个函数更新state之后， redux又调用了所有的 listener，而listener是通过subscribe传入的， 因此这是一个发布/订阅模式的实现</p>
+<p>对于只接收一个参数的createStore来说，很简单了，只是返回了几个函数， 这个几个函数都是写在createStore中</p>
+<p><img src="/images/pasted-11.png" alt="upload successful"></p>
+<p>比如最长使用的dispatch函数</p>
+<p>第二个参数就是普通的Object，文档上说是初始化的state， 没什么好说的</p>
+<p>重点说说有三个参数的时候，第三个参数是通过 applyMiddleware 创建的</p>
+<p>当有这个参数的时候，createStore会有执行这一段代码</p>
+<p><img src="/images/pasted-12.png" alt="upload successful"></p>
+<p>enhancer是我们传入的第三个参数，createStore就是我们当前的函数，并且函数走到这个直接return了 ？？？？？</p>
+<p>我们先看applyMiddleware是什么</p>
+<h3 id="applyMiddleware"><a href="#applyMiddleware" class="headerlink" title="applyMiddleware"></a>applyMiddleware</h3><p><img src="/images/pasted-13.png" alt="upload successful"></p>
+<p>applyMiddleware函数接收一堆函数，又返回了一个函数</p>
+<p>在返回的这个函数中我们看到了这个</p>
+<p><img src="/images/pasted-14.png" alt="upload successful"></p>
+<p>在这里重新调用了不带middleware的函数， 于是在这里我们得到了store</p>
+<p><img src="/images/pasted-15.png" alt="upload successful"></p>
+<h3 id="compose"><a href="#compose" class="headerlink" title="compose"></a>compose</h3><p>compose函数也是redux的一个核心， 这个一个函数是编程的常用模式，其实就是数组的reduce方法</p>
+<p><img src="/images/pasted-16.png" alt="upload successful"></p>
+<p>为了说的更清楚， 我们顺便看一个middleware， redux-thunk，下面就是它全部的代码了</p>
+<p><img src="/images/pasted-17.png" alt="upload successful"></p>
+<p>可见next其实就是dispatch</p>
+<h3 id="dispatch包装图"><a href="#dispatch包装图" class="headerlink" title="dispatch包装图"></a>dispatch包装图</h3><p><img src="/images/pasted-18.png" alt="upload successful"></p>
+<p>这里面还有一部分代码没有提及，比如 bindActionCreators , __DO_NOT_USE__ActionTypes，比较简单，代码两也少就不浪费笔墨了， 有兴趣的可以自己翻翻</p>
+<h2 id="结语："><a href="#结语：" class="headerlink" title="结语："></a>结语：</h2><p>redux的state保存在闭包中，dispatch等context的函数也在闭包中<br>dispatch函数是有返回值的，是action<br>redux的数据更新使用了发布/订阅模式<br>我们看到了replaceReducer函数，说明reducer是可以动态替换的<br>我们看到了observable函数， 说明redux除了listener还可能支持observable<br>middleware的第二层参数next其实是后面一个middleware包装后的dispatch， 最后一个middleware的next才是store上真正的dispatch<br>middleware的串联是通过reduce来实现的<br>我们知道了一个middleware的结构，完全可以自己实现一个middleware了<br>我们知道了一种实现middleware的方式<br>高阶函数，函数式编程的思想</p>
+<p>… …<br>更多心得需要慢慢体会</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/lighthouse/" rel="tag"># lighthouse</a>
+              <a href="/tags/redux/" rel="tag"># redux</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/frontend/performance/" rel="next" title="性能优化">
+                  性能优化 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">roadup</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
