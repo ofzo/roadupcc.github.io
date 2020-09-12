@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.roadup.cc","root":"/","scheme":"Muse","version":"8.0.0","exturl":false,"sidebar":{"position":"left","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="WebAssembly 语义本文档主要介绍WebAssembly代码的高级设计：类型，结构和语义。WebAssembly代码可以被认为是一个结构化堆栈机器; 大多数计算仅使用栈中存储的数值内容，但是控制流使用结构化构造表示，如区块，条件判断ifs 和循环等。 实践中， 具体实现无须为控制流维护实际值栈和数据结构；它们只须遵循as if规则 。 全部详情请参阅the formal Specifica">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebAssembly 语义">
+<meta property="og:url" content="http://www.roadup.cc/frontend/wasm/index.html">
+<meta property="og:site_name" content="时光荏苒">
+<meta property="og:description" content="WebAssembly 语义本文档主要介绍WebAssembly代码的高级设计：类型，结构和语义。WebAssembly代码可以被认为是一个结构化堆栈机器; 大多数计算仅使用栈中存储的数值内容，但是控制流使用结构化构造表示，如区块，条件判断ifs 和循环等。 实践中， 具体实现无须为控制流维护实际值栈和数据结构；它们只须遵循as if规则 。 全部详情请参阅the formal Specifica">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-12T18:22:57.000Z">
+<meta property="article:modified_time" content="2020-09-12T10:27:40.578Z">
+<meta property="article:author" content="roadup">
+<meta property="article:tag" content="WebAssembly">
+<meta property="article:tag" content="wat">
+<meta property="article:tag" content="wasm">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://www.roadup.cc/frontend/wasm/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>WebAssembly 语义 | 时光荏苒</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">时光荏苒</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">君子知命不惧，日日自新</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="archives fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#WebAssembly-%E8%AF%AD%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">WebAssembly 语义</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%AD%E6%96%AD"><span class="nav-number">1.1.</span> <span class="nav-text">中断</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%88%E6%BA%A2%E5%87%BA"><span class="nav-number">1.2.</span> <span class="nav-text">栈溢出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.3.</span> <span class="nav-text">类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BA%BF%E6%80%A7%E5%86%85%E5%AD%98"><span class="nav-number">1.4.</span> <span class="nav-text">线性内存</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%BF%E6%80%A7%E5%86%85%E5%AD%98%E8%AE%BF%E9%97%AE"><span class="nav-number">1.4.1.</span> <span class="nav-text">线性内存访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%BB%E5%9D%80"><span class="nav-number">1.4.2.</span> <span class="nav-text">寻址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E9%BD%90"><span class="nav-number">1.4.3.</span> <span class="nav-text">对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B6%8A%E7%95%8C"><span class="nav-number">1.4.4.</span> <span class="nav-text">越界</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E6%95%B4"><span class="nav-number">1.4.5.</span> <span class="nav-text">调整</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8"><span class="nav-number">1.5.</span> <span class="nav-text">表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F"><span class="nav-number">1.6.</span> <span class="nav-text">局部变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F"><span class="nav-number">1.7.</span> <span class="nav-text">全局变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E7%BB%93%E6%9E%84%E5%92%8C%E6%8C%87%E4%BB%A4"><span class="nav-number">1.8.</span> <span class="nav-text">控制结构和指令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%94%AF%E5%92%8C%E5%B5%8C%E5%A5%97"><span class="nav-number">1.8.1.</span> <span class="nav-text">分支和嵌套</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E6%8C%87%E4%BB%A4%E7%9A%84%E6%89%A7%E8%A1%8C%E8%AF%AD%E4%B9%89"><span class="nav-number">1.8.2.</span> <span class="nav-text">控制指令的执行语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#br-table"><span class="nav-number">1.8.3.</span> <span class="nav-text">br_table</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E7%94%A8"><span class="nav-number">1.9.</span> <span class="nav-text">调用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E9%87%8F"><span class="nav-number">1.10.</span> <span class="nav-text">常量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#32%E4%BD%8D%E6%95%B4%E5%9E%8B%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">1.11.</span> <span class="nav-text">32位整型运算符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#64-%E4%BD%8D%E6%95%B4%E5%9E%8B%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">1.12.</span> <span class="nav-text">64-位整型运算符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%AE%E7%82%B9%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">1.13.</span> <span class="nav-text">浮点运算符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2%EF%BC%8C-%E6%88%AA%E6%96%AD%EF%BC%8C-%E9%87%8D%E8%A7%A3%E9%87%8A%EF%BC%8C-%E6%8F%90%E5%8D%87%E5%92%8C%E9%99%8D%E7%BA%A7"><span class="nav-number">1.14.</span> <span class="nav-text">数据类型转换， 截断， 重解释， 提升和降级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B1%BB%E5%9E%8B%E5%8F%82%E6%95%B0%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">1.15.</span> <span class="nav-text">类型参数运算符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8D%E5%8F%AF%E8%BE%BE"><span class="nav-number">1.16.</span> <span class="nav-text">不可达</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%A1%E9%AA%8C"><span class="nav-number">1.17.</span> <span class="nav-text">校验</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">roadup</p>
+  <div class="site-description" itemprop="description">君子知命不惧，日日自新</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://www.roadup.cc/frontend/wasm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="roadup">
+      <meta itemprop="description" content="君子知命不惧，日日自新">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="时光荏苒">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          WebAssembly 语义
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-09-12 18:22:57" itemprop="dateCreated datePublished" datetime="2019-09-12T18:22:57+00:00">2019-09-12</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-09-12 10:27:40" itemprop="dateModified" datetime="2020-09-12T10:27:40+00:00">2020-09-12</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/WebAssembly/" itemprop="url" rel="index"><span itemprop="name">WebAssembly</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="WebAssembly-语义"><a href="#WebAssembly-语义" class="headerlink" title="WebAssembly 语义"></a>WebAssembly 语义</h1><p>本文档主要介绍WebAssembly代码的高级设计：类型，结构和语义。WebAssembly代码可以被认为是一个结构化堆栈机器; 大多数计算仅使用栈中存储的数值内容，但是控制流使用结构化构造表示，如区块，条件判断ifs 和循环等。 实践中， 具体实现无须为控制流维护实际值栈和数据结构；它们只须遵循<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/As-if_rule">as if</a>规则 。 全部详情请参阅<a target="_blank" rel="noopener" href="https://github.com/WebAssembly/spec">the formal Specification</a>, 想要了解文件级编码详情，请阅读<a target="_blank" rel="noopener" href="http://webassembly.org/docs/binary-encoding/">Binary Encoding</a>, 人类可读的文本表示请参阅文本格式请阅读<a target="_blank" rel="noopener" href="http://webassembly.org/docs/text-format/">Text Format</a>.</p>
+<a id="more"></a>
+<blockquote>
+<p>[注]as-if rule 只要不改变程序的 可观察行为（observable behavior），就可以任意改变程序代码。在as-if规则下，编译器可以对代码做最大限度的优化，尽可能提升应用程序的执行效率。</p>
+</blockquote>
+<p>函数体由指令序列组成， 也要以把它看作一个隐式块。 同传统程序计数器(PC)一样，指令执行过程通过向前移动的方式处理指令序列。 指令分为两类：控制指令和简单指令。控制指令组成了控制结构和简单指令， 它从栈顶弹出参数值，根据情况决定是否更改PC的内容，然后将结果值压入堆栈。 简单指令从堆栈中弹出一个或多个参数值，批量对这些值应用一个运算符操作后，将结果值压入堆栈，随后自动递增 PC 的内容。</p>
+<p>WebAssembly中所有指令和运算符都是显式类型的，不支持重载。 WebAssembly代码验证需要在一个常数时间内同时通过类型检查和合法性检查。</p>
+<p>WebAssembly提供了一组语言无关的运算符，它们与许多编程语言中的运算符紧密匹配，并且可在所有现代计算机上高效地实现。 每个运算符都有相应的简单指令。</p>
+<p><a target="_blank" rel="noopener" href="https://www.zcfy.cc/article/semantics-webassembly">理论基础</a> 文档详细解释了WebAssembly被设计成这样的原因。= <a target="_blank" rel="noopener" href="https://www.zcfy.cc/article/semantics-webassembly">未来功能</a> 计划</p>
+<h2 id="中断"><a href="#中断" class="headerlink" title="中断"></a><strong>中断</strong></h2><p>一些运算符在某些情况下可能会产生_中断_，下面会提到具体情况。 在MVP中，中断意味着WebAssembly实例中的执行将被终止， 将异常终止报告给外部环境。 在JavaScript环境中，比如浏览器，中断会导致JavaScript异常。如果找开了开发者工具，在终止前添加一个debugger调试会是非常明智的。</p>
+<h2 id="栈溢出"><a href="#栈溢出" class="headerlink" title="栈溢出"></a><strong>栈溢出</strong></h2><p>调用堆栈空间受到未指定和动态变化约束的限制，它们也带来了 <a target="_blank" rel="noopener" href="https://www.zcfy.cc/article/semantics-webassembly">不确定性</a>.。 任何时候程序调用堆栈使用的空间超出了可用的调用堆栈空间，都会终止WebAssembly实例中的执行，异常终止将被报告给外部环境。</p>
+<p>实现必须设定一个内部的最大调用堆栈空间尺寸，每次调用必须占用一些资源， 来消耗该值（当然，动态资源可能会更快耗尽）。 这个规则是为了避免观察行为间的差异; 如果某些实现设定了内部最大调用堆栈空间尺寸，有些实则没有，那么在这些没设定最大调用堆栈空间尺寸的实现上成功运行的程序可能会无限制地消耗资源，将这些程序放在其他实现中运行将会失败。 此外，预期WebAssembly未来将添加某种形式的堆栈内省功能，在这种情况下，优化会是直接可见的。</p>
+<p>显式尾调用计划在<a target="_blank" rel="noopener" href="https://www.zcfy.cc/article/semantics-webassembly">未来</a>  支持。 介时会提供一个显式的尾调用运算符, 它具有明确的栈内省功能定义。</p>
+<h2 id="类型"><a href="#类型" class="headerlink" title="类型"></a><strong>类型</strong></h2><p>WebAssembly 具有以下 <em>值类型</em>:</p>
+<ul>
+<li><code>i32</code>: 32-bit 整型</li>
+<li><code>i64</code>: 64-bit 整型</li>
+<li><code>f32</code>: 32-bit 浮点型</li>
+<li><code>f64</code>: 64-bit 浮点型</li>
+</ul>
+<p>每个参数和局部变量都必须是以上四种<a target="_blank" rel="noopener" href="https://www.zcfy.cc/article/semantics-webassembly">值类型</a>之一 . 函数签名由0或多个参数的类型序列及0或多个返回值的类型序列组成。 （注意：在MVP中，一个函数最多可以有一个返回类型）。</p>
+<p>需要注意的是， 值类型<code>i32</code>和<code>i64</code>不是固有有符号或无符号的。 这些类型的解释取决于某个具体的运算符。</p>
+<h2 id="线性内存"><a href="#线性内存" class="headerlink" title="线性内存"></a><strong>线性内存</strong></h2><p><em>线性内存</em> 是一段 按字节寻址的连续存储区间， 范围从<code>0</code> 到一个可变 <em>内存容量</em> 。 这个容量通常是WebAssembly页容量的倍数, WebAssembly的页容量被固定为64KiB（尽量未来可能添加可选的更大页容量支持）。模块文档的<a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#linear-memory-section">线性内存</a> 和 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#data-section">数据</a>部分中给出了线性内存的初始状态定义。可以用 <code>[grow_memory](http://webassembly.org/docs/semantics/#resizing)</code> 运算符动态增加线性内存容量。</p>
+<p>线性内存可以被认为是一个无类型的字节数组，嵌入器是如何把这个数组映射到进程自己的 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Virtual_memory">虚拟内存</a> 中并没给出明确说明。线性内存是沙盒隔离的，它不依赖其它的线性内存、 执行引擎的内部数据结构 ， 执行堆栈、局部变量、其它进程的内存。</p>
+<p>每个WebAssembly <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/">实例</a>都有特别指定的 <em>默认</em> 线性内存， 这段内存可被所有的<a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#linear-memory-access">内存运算符</a>访问。在MVP中，只有默认的线性内存，但在MVP之后可能会添加可以访问非默认内存的 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#multiple-tables-and-memories">新内存运算符</a>  。</p>
+<p>线性内存（默认或其它） 要么是被 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#imports">导入</a> ， 要么是 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#linear-memory-section">模块内定义</a>的。这两种方式对后续的线性内存访问没有区别。</p>
+<p>在MVP中，线性内存不能在执行线程间共享。未来将会允许线程间共享， 见<a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#threads">线程</a>  .</p>
+<h3 id="线性内存访问"><a href="#线性内存访问" class="headerlink" title="线性内存访问"></a><strong>线性内存访问</strong></h3><p>线性内存访问通过显式调用 <code>load</code> 和 <code>store</code> 运算符完成。 对值和字节进行转换时， 所有的<code>load</code> 和 <code>store</code> 运算符都采用小端字节序。加载整数可以指定<em>存储大小</em>和符号， 存储大要小小于结果类型的大小, 符号决定结果类型中的字节是符号扩展的还是零扩展的。</p>
+<blockquote>
+<p>[注]符号扩展： 二进制中的有符号数，符号位总是位于数的第一位，如果向方位较大的数据类型进行扩展，符号位也应该位于第一位才对，所以当一个负数被扩展时，其扩展的高位全被置位为1；对于整数，因为符号位是0，所以其扩展的位仍然是0零扩展： 不管要转换成什么整型类型，不要最初值的符号位是什么，扩展的高位都被置位0.见《深入理解计算机系统》 原书第3版 第2章 信息的表示和处理 2.2.6节 扩展一个数字的位表示</p>
+</blockquote>
+<ul>
+<li><code>i32.load8_s</code>: 加载1字节， 将8位整数零扩展为32位整数</li>
+<li><code>i32.load8_u</code>: 加载1字节， 将8位整数零扩展为32位整数</li>
+<li><code>i32.load16_s</code>: 加载2字节， 将16位整数符号扩展为32位整数</li>
+<li><code>i32.load16_u</code>: 加载2字节， 将16位整数零扩展为32位整数</li>
+<li><code>i32.load</code>: 加载4字节，转换为32位整数</li>
+<li><code>i64.load8_s</code>: 加载1字节， 将8位整数符号扩展为64位整数</li>
+<li><code>i64.load8_u</code>: 加载1字节， 将8位整数零扩展为64位整数</li>
+<li><code>i64.load16_s</code>: 加载2字节， 将16位整数符号扩展为64位整数</li>
+<li><code>i64.load16_u</code>: 加载2字节， 将16位整数零扩展为64位整数</li>
+<li><code>i64.load32_s</code>: 加载4字节， 将32位整数符号扩展为64位整数</li>
+<li><code>i64.load32_u</code>: 加载4字节， 将32位整数零扩展为64位整数</li>
+<li><code>i64.load</code>: 加载8字节，转换为64位整数</li>
+<li><code>f32.load</code>: 加载4字节，转换为32位浮点数</li>
+<li><code>f64.load</code>: 加载8字节，转换为64位浮点数</li>
+</ul>
+<p>存储有一个额外的输入操作数，这个操作数就是要存储到内存中的<code>value</code>, 同加载一样，整数存储可以指定比操作数更小的<em>存储大小</em>， 这种情况下隐含了整数包装。</p>
+<ul>
+<li><code>i32.store8</code>: 将32位整数包装为8位整数， 存储1字节</li>
+<li><code>i32.store16</code>: 将32位整数包装为16位整数， 存储2字节</li>
+<li><code>i32.store</code>: (不转换) 存储4字节</li>
+<li><code>i64.store8</code>: 将64位整数包装为8位整数， 存储1字节</li>
+<li><code>i64.store16</code>: 将64位整数包装为16位整数， 存储2字节</li>
+<li><code>i64.store32</code>: 将64位整数包装为32位整数， 存储4字节</li>
+<li><code>i64.store</code>: (不转换) 存储8字节</li>
+<li><code>f32.store</code>: (不转换) 存储4字节</li>
+<li><code>f64.store</code>: (不转换) 存储8字节</li>
+</ul>
+<p>存储运算符不产生<code>value</code></p>
+<p>以上运算符都在<a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#linear-memory">默认线性内存</a>上进行操作。</p>
+<h3 id="寻址"><a href="#寻址" class="headerlink" title="寻址"></a><strong>寻址</strong></h3><p>每个线性内存访问运算符都有一个地址操作数和无符号的整数字节偏移立即数。 对地址操作数值与偏移值进行无限精度无符号求和得到的值， 称为<em>有效地址</em>，这被解释为线性内存中的无符号字节索引。</p>
+<p>线性内存运算符从有效地址开始访问字节，一直访问到存储大小指定的字节数。 如果任何访问的字节超出了当前的内存大小，则访问被认为_越界_。</p>
+<p>在有效地址计算中使用无限精度意味着向地址添加偏移量绝对不会导致包装，因此，如果访问地址超出范围，则有效地址将始终为越界。</p>
+<p>在wasm32中， 地址操作数和偏移量属性的数据类型为<code>i32</code>， 线性内存大小限制为4 GiB（当然，实际大小进一步受 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/nondeterminism/">可用资源</a>的限制）。 在wasm64中，地址操作数和偏移量的数据类型为<code>i64</code>。 MVP只包括wasm32; 后续版本将增加对wasm64的支持，从而支持 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#linear-memory-bigger-than-4-gib">&gt;4 GiB 的线性内存</a> 。</p>
+<h3 id="对齐"><a href="#对齐" class="headerlink" title="对齐"></a><strong>对齐</strong></h3><p>每个线性内存访问运算符还有一个必须是 2 的正整数幂的立即数，对齐属性必须小于等于可访问内存大小。对齐值与内存访问值的大小一致时， 这个值被认为是自然对齐的。对齐不仅适用于地址操作数， 也适用于有效地址。 即考虑对齐时会想到立即数偏移量</p>
+<p>对齐具有和地址操作数、偏移量操作数一致的类型（取决于wasm32/wasm64， 如上所述）。</p>
+<p>如果内存访问的有效地址是对齐属性值的倍数， 则内存访问被认为是对齐的， 否则被认为未对齐。对齐和不对齐的访问具有相同的行为。</p>
+<p>对齐会影响以下性能：</p>
+<ul>
+<li>只有自然对齐的对齐访问速度也是很快的</li>
+<li>小于自然对齐的对齐访问可能会稍微慢一点（ 考虑下：实现可以在软件中或在硬件中进行多次访问）。</li>
+<li>任何形式的未对齐访问都可能会非常慢（考虑下：实施需要一个信号修复问题）</li>
+</ul>
+<p>因些， 建议WebAssembly 生产者对齐频繁使用的数据以允许自然对齐访问， 并且尽可能使用具有最大对齐值的加载和存储，同时始终避免未对齐访问。</p>
+<h3 id="越界"><a href="#越界" class="headerlink" title="越界"></a><strong>越界</strong></h3><p>越界产生中断。 访问存储时，如果访问的字节中任何一个发生越界，则所有访问到的字节都不会被修改。</p>
+<h3 id="调整"><a href="#调整" class="headerlink" title="调整"></a><strong>调整</strong></h3><p>MVP中， 可以用<code>grow_memory</code> 运算符调整线性内存的大小。<code>grow_memory</code>运算符的操作数以WebAssembly页面大小为单位， 页大小被固定为64KiB (<a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#large-page-support">未来</a> 会添加大页支持)</p>
+<ul>
+<li><code>grow_memory</code> : 通过给定的页量增量来增加线性内存。返回原来的内存大小（以页为单位），执行失败时返回-1</li>
+</ul>
+<p>如果线性内存 声明了<a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#linear-memory-section">最大内存大小</a>，且增长超过该最大值时，<code>grow_memory</code>必须失败。 但是，如果无法预留空间，或者如果启用预留内存失败，grow_memory可能会在到达最大值之前失败。 当没有声明最大内存大小时，<code>grow_memory</code> 将会执行系统分配， 也可能会失败。</p>
+<p>当前的线性内存大小可以用下面的运算符查询</p>
+<ul>
+<li><code>current_memory</code> : 返回当前内存大小， 以页为单位</li>
+</ul>
+<p>如上所述， 线性内存是连续的， 也就是说， 线性地址空间中没有”洞”。 MVP以后， <a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#finer-grained-control-over-memory">未来功能</a>  提议允许在连续线性内存中设置保护和创建映射 。</p>
+<p>MVP中， 内存只能增长 。MVP以后， 可能会添加内存缩小运算符。然而， 由于正常的分段，应用程序反而期望未来的<code>[discard</code>](<a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#finer-grained-control-over-memory">http://webassembly.org/docs/future-features/#finer-grained-control-over-memory</a>)  功能， 从工作集中释放未使用的物理页面.</p>
+<p>以上运算符都在<a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#linear-memory">默认线性内存</a>上进行操作。</p>
+<h2 id="表"><a href="#表" class="headerlink" title="表"></a><strong>表</strong></h2><p>_表<em>类似于线性内存，表元素是不透明值，一种特殊的</em>表元素类型_， 而不是字节。 这允许表包含值—类似GC引用、原始OS句柄、或原生指针—WebAssembly 代码可以通过整数索引直接获取这些值。 该功能以边界检查表为代价，间接弥补了底层的不受信的线性内存和高层的不透明句柄/引用之间的差距。</p>
+<p>表的元素类型限制了存储在表中的元素类型，为引擎避免了一些表使用中的类型检查。 当WebAssembly值存储在表中时，值的类型必须与元素类型精确匹配。 取决于用来存储值的运算符/ API，检查可能是静态也可能动态的。 就像线性内存一样，引用该表的所有实例都会立即观察到表的更新。 宿主环境还可以允许在表中存储非WebAssembly值，在这种情况下，与<a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#imports">导入</a> 一样，由宿主环境定义该值的使用含义。</p>
+<p>每个WebAssembly实例都有一个特别指定的缺省表，可以被<code>[call_indirect](http://webassembly.org/docs/semantics/#calls)</code> 和其他未来的表运算符索引。表要么是被 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#imports">导入</a> ， 要么是 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#linear-memory-section">模块内定义</a>的。这两种方式对后续的表内调用访问没有区别。</p>
+<p>在MVP中，表的主要目的是实现C / C ++中的间接函数调用（把整数索引当作函数指针使用），并且用表来保存间接函数调用的数组。 因此，在MVP中：</p>
+<ul>
+<li>WebAssembly 代码只能用 <code>[call_indirect](http://webassembly.org/docs/semantics/#calls)</code> 访问表</li>
+<li><code>anyfunc</code> （任意签名的函数）是唯一允许的表元素类型</li>
+<li>WebAssembly 代码不能直接改变或调整表； 这些操作只能在宿主环境中进行（如， <code>WebAssembly</code> <a target="_blank" rel="noopener" href="http://webassembly.org/docs/js/#webassemblytable-objects">JavaScript API</a> ）</li>
+</ul>
+<h2 id="局部变量"><a href="#局部变量" class="headerlink" title="局部变量"></a><strong>局部变量</strong></h2><p>每个函数都有一些固定的，预声明的局部变量，它们占用函数内部的单个索引空间。 参数被当作局部变量处理。 局部变量没有地址和线性内存别名。 局部变量具有 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#types">值类型</a> ，函数开头将局部变量的类型初始化为相应的零值（整型值初始为0，浮点数初始为+0），形参则被初始化为传递给函数的实参值。</p>
+<ul>
+<li><code>get_local</code>: 获取局部变量当前值</li>
+<li><code>set_local</code>: 设置局部变量当前值</li>
+<li><code>tee_local</code>: 类似 <code>set_local</code>, 设置局部变量当前值后返回被设置的新值</li>
+</ul>
+<p>关于局部变量索引空间和类型的细节将进一步明确， 例如， 类型为i32和i64的局部变量必须是相邻的，还是被其它变量分开的等等。</p>
+<h2 id="全局变量"><a href="#全局变量" class="headerlink" title="全局变量"></a><strong>全局变量</strong></h2><p><em>全局变量</em>存储固定值类型的单个值，并且可以声明为可变的或不可变的。 这为WebAssembly提供了与任何线性存内存都不相交的内存位置，因此不能任意地作为位来别名。</p>
+<p>全局变量只能从模块内定义的 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#global-index-space">全局索引空间</a> 中通过整数索引的方式获取。全局变量要么是被 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#imports">导入</a> ， 要么是 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#linear-memory-section">模块内定义</a>的。这两种方式对后续的全局变量访问没有区别。</p>
+<ul>
+<li><code>get_global</code>: 获取全局变量的当前值</li>
+<li><code>set_global</code>: 设置全局变量的当前值</li>
+</ul>
+<p><code>set_global</code> 设置不可变全局变量索引会导致验证异常</p>
+<p>MVP中，全局变量的主要用例是将实例化不可变值表示为 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/dynamic-linking/">动态链接</a>的有用构建块。</p>
+<p>MVP之后，当<a target="_blank" rel="noopener" href="http://webassembly.org/docs/gc/">引用类型</a> 被添加到值类型集合中时，需要使用全局变量来允许 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#threads">线程</a>  间共享引用类型，因为共享线性内存不能加载或存储引用。</p>
+<h2 id="控制结构和指令"><a href="#控制结构和指令" class="headerlink" title="控制结构和指令"></a><strong>控制结构和指令</strong></h2><p>WebAssembly提供基本的结构化控制流结构，如_块_，_循环_和 <em>ifs</em>。 所有结构都由以下控制指令组成：</p>
+<ul>
+<li><code>nop</code>: 无操作， 无效果</li>
+<li><code>block</code>: 一个块结构的开始，以一个标记结尾的指令序列</li>
+<li><code>loop</code>: 一个开头有标记的块，可以用来形成循环</li>
+<li><code>if</code>: 一个具有隐式<em>then</em>块的if结构的开始</li>
+<li><code>else</code>: 标记if指令的else块</li>
+<li><code>br</code>: 到封闭结构中给定标记的分支</li>
+<li><code>br_if</code>: 到封闭结构中给定标记的条件分支</li>
+<li><code>br_table</code>: 跳表， 跳转到封闭结构中的标记</li>
+<li><code>return</code>: 函数返回0或多个值</li>
+<li><code>end</code>: 标记块、循环，if或函数的结束的指令</li>
+</ul>
+<p>块的组成包括匹配的<code>block</code> … <code>end</code> 指令对、 匹配的<code>loop</code> … <code>end</code> 指令对、 <code>if</code> … <code>end</code> 或者 <code>if</code> … <code>else</code> … <code>end</code> 序列的条件语句 。每个结构中的省略号中的指令被称作被_封闭_在结构中。</p>
+<h3 id="分支和嵌套"><a href="#分支和嵌套" class="headerlink" title="分支和嵌套"></a><strong>分支和嵌套</strong></h3><p><code>br</code>, <code>br_if</code>, <code>br_table</code> 指令表示底层分支，后续统一简称为分支。 分支仅能引用包围在它们结构内的定义标记。例如，只能在<code>block</code>内引用<code>block</code>标记。</p>
+<p>实际上，除了由于嵌套限制使得不能从循环外部分支进入循环中间, 外部<code>block</code>可以用于为任何给定的分支模式放置标记. 这种限制通过构造确保所有控制流程图都具有良好的结构，如高级语言（Java，JavaScript和Go）。 请注意，一个分支到<code>block</code>的标记相当于高级语言的标记<code>break</code>; 简单地从<code>block</code>中跳出，进入循环的声明是<code>continue</code>。</p>
+<h3 id="控制指令的执行语义"><a href="#控制指令的执行语义" class="headerlink" title="控制指令的执行语义"></a><strong>控制指令的执行语义</strong></h3><p>执行<code>return</code>从值栈弹出返回值（1或多个），并从当前函数返回。</p>
+<p>执行<code>block</code> 或者<code>loop</code>指令对值栈没有影响。</p>
+<p>执行 <code>block</code> or <code>loop</code> 的 <code>end</code> 指令，(包括隐式块，如<code>if</code>块或函数体）对值堆栈没有影响。</p>
+<p>执行函数体隐式块的<code>end</code>指令， 会从栈顶弹出返回值（1或多个）（如果有的话）, 并从函数返回。</p>
+<p>执行<code>if</code>指令从堆栈中弹出一个<code>i32</code>条件， 然后要么转到下一条指令， 要么设置程序计数器指向<code>if</code>指令的<code>else</code>或<code>end</code>。</p>
+<p>执行<code>if</code>的<code>else</code>指令设置程序计数器指向<code>if</code>相应的<code>end</code></p>
+<p>退出<code>block</code>或<code>if</code>的分支可能产生结构的值 。分支从堆栈中弹出结果值，值类型必须与目标结构声明的类型相同。如果采取条件或无条件的分支，则丢弃在构造和分支的开始之间被推到堆栈上的值，结果值被推回堆栈，更新程序计数器指向构造的结尾。</p>
+<p>转向<code>loop</code>的分支不会产生值；它们从堆栈中弹出所有从循环开始时进入堆栈中的值，更新程序计数器指向循环的开始位置。</p>
+<p><code>drop</code>运算符可以用来显示的从栈顶弹出一个值。</p>
+<p>与显式分支相关联的隐式弹出使编译表达式语言简单明了，甚至更少的出栈操作也能实现非局部的控制流传递。</p>
+<p>注意，在MVP中，所有的控制结构和控制指令，限制<code>return</code>最多返回一个值。</p>
+<h3 id="br-table"><a href="#br-table" class="headerlink" title="br_table"></a><strong><code>br_table</code></strong></h3><p><code>br_table</code>由一个下标从零开始的标记数组，一个<em>default</em>标记，和一个索引操作数组成。<code>br_table</code>跳转到数组中的索引标记，如果索引越界，则跳转到默认标记。</p>
+<h2 id="调用"><a href="#调用" class="headerlink" title="调用"></a><strong>调用</strong></h2><p>每个函数都有签名，签名的组成包括：</p>
+<ul>
+<li>返回类型， 一系列值类型</li>
+<li>参数类型， 一系列值类型</li>
+</ul>
+<p>WebAssembly 不支持变长参数列表(亦称 varargs). webassembly编译器可以通过显式访问线性内存的方式提供变通支持。</p>
+<p>MVP中，返回类型序列的长度可能只有0或1。未来可能取消这一限制。</p>
+<p>直接调用函数通过 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/modules/#function-index-space">函数索引空间</a>中的索引来指定被调用者。</p>
+<ul>
+<li><code>call</code>: 直接函数调用</li>
+</ul>
+<p>直接调用签名不匹配的函数的直接调用会引发一个模块验证异常。</p>
+<p>间接函数调用用<a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#table">table</a>中的一个<code>i32</code>索引 来表示被调用者。目标函数的_期望_签名（由 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/binary-encoding/#type-section">类型部分</a>中的索引指定）作为第二个立即数签名。</p>
+<ul>
+<li><code>call_indirect</code>: 间接函数调用</li>
+</ul>
+<p>作为验证的一部分，<code>call</code> 静态地检查调用者和被调用者的签名是否匹配。不同于<code>call</code>，<code>call_indirect</code> _动态_地对比调用者期待的签名和被调用者的函数签名 ，如果不匹配则产生中断。由于被调用者可能在不同的模块中， 那个模块肯定有独立的<a target="_blank" rel="noopener" href="http://webassembly.org/docs/binary-encoding/#type-section">类型区间</a> 、类型索引空间， 因此签名匹配必须对比底层的 <code>[func_type](https://github.com/WebAssembly/spec/blob/master/interpreter/spec/types.ml#L5)</code>. 如上面<a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#table">表</a> 部分所述, 表元素也可以是在宿主环境定义的值 ， 这种情况意味着调用(签名的检查方式)也是宿主环境定义的，就像调用import一样。</p>
+<p>MVP中， 唯一的 <code>call_indirect</code> 访问了<a target="_blank" rel="noopener" href="http://webassembly.org/docs/semantics/#table">缺省表</a>.</p>
+<p>多个返回值的调用将成为可能，尽管MVP中不可以。 多个返回值调用的细节需要明确。 调用返回多个值的函数可能必须是一个指定多个局部变量的语句，以分配相应的返回值。</p>
+<h2 id="常量"><a href="#常量" class="headerlink" title="常量"></a><strong>常量</strong></h2><p>这些运算符具有其相关类型的立即操作数，它们是作为结果值生成的。所有类型的所有可能值都被支持（包括所有可能的位模式的NaN值）。</p>
+<ul>
+<li><code>i32.const</code>: 产生一个<code>i32</code>类型的立即数</li>
+<li><code>i64.const</code>: 产生一个<code>i64</code>类型的立即数</li>
+<li><code>f32.const</code>: 产生一个<code>f32</code>类型的立即数</li>
+<li><code>f64.const</code>: 产生一个<code>f64</code>类型的立即数</li>
+</ul>
+<h2 id="32位整型运算符"><a href="#32位整型运算符" class="headerlink" title="32位整型运算符"></a><strong>32位整型运算符</strong></h2><p>整数运算符包括有符号的，无符号的或符号不可知的。 有符号运算符使用二进制补码有符号整数表示法。</p>
+<p>当结果不能用结果类型表示时，有符号和无符号运算符都会产生中断。 包括对零求余、有符号除法溢出（<code>INT32_MIN / -1</code>）。带有非零分母的有符号余数总是返回正确值， 即使对应的除法产生中断。 符号不可知的运算符静默地将溢出结果包装成结果类型。</p>
+<ul>
+<li><code>i32.add</code>: 符号不可知加法</li>
+<li><code>i32.sub</code>: 符号不可知减法</li>
+<li><code>i32.mul</code>: 符号不可知乘法 (lower 32-bit)</li>
+<li><code>i32.div_s</code>: 有符号除法 (结果截断为零)</li>
+<li><code>i32.div_u</code>: 无符号除法 (结果 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Floor_and_ceiling_functions">向下求整</a>)</li>
+<li><code>i32.rem_s</code>: 有符号求余 (符号与被除数相同)</li>
+<li><code>i32.rem_u</code>: 无符号求余</li>
+<li><code>i32.and</code>: 符号不可知的的按位与</li>
+<li><code>i32.or</code>: 符号不可知的的按位或</li>
+<li><code>i32.xor</code>: 符号不可知的的按位异或</li>
+<li><code>i32.shl</code>: 符号不可知左移</li>
+<li><code>i32.shr_u</code>: 无符号右移（逻辑右移）</li>
+<li><code>i32.shr_s</code>: 有符号右移（算术右移）</li>
+<li><code>i32.rotl</code>: 符号不可知左循环</li>
+<li><code>i32.rotr</code>: 符号不可知右循环</li>
+<li><code>i32.eq</code>: 符号不可知的相等比较</li>
+<li><code>i32.ne</code>: 符号不可知的不相等比较</li>
+<li><code>i32.lt_s</code>: 有符号的小于</li>
+<li><code>i32.le_s</code>: 有符号的小于等于</li>
+<li><code>i32.lt_u</code>: 无符号的小于</li>
+<li><code>i32.le_u</code>: 无符号的小于等于</li>
+<li><code>i32.gt_s</code>: 有符号的大于</li>
+<li><code>i32.ge_s</code>:有符号的大于等于</li>
+<li><code>i32.gt_u</code>: 无符号的大于</li>
+<li><code>i32.ge_u</code>: 无符号的大于等于</li>
+<li><code>i32.clz</code>: 符号不可知的前导零位计数（如果值为零，所有零位都被认为是前导）</li>
+<li><code>i32.ctz</code>:符号不可知的拖尾零位计数（如果值为零，所有零位都被认为是的拖尾）</li>
+<li><code>i32.popcnt</code>: :符号不可知的一位计数</li>
+<li><code>i32.eqz</code>: 零值相等比较（如果操作数是0， 则返回1， 否则均返回0）</li>
+</ul>
+<p>移位计数被当作无符号数包装成小于以2为底被右移值位数的对数。 例如，在32位移位中，只有计数的最低位的5位有效位会影响结果。在64位移位中，只有计数的最低位的6位有效位会影响结果。</p>
+<p>循环计数被当作无符号的。对计数值大于等于值位数的值进行循环计数，会产生相同的结果 ，就像计数被包装成它的最低N位有效位， 计数值为<code>i32</code>类型时N等于5， 计数值为<code>i64</code>类型时N为6。</p>
+<p>所有的对比运算符产生32位整数的结果， <code>1</code> 代表 <code>true</code>， <code>0</code>代表 <code>false</code>.</p>
+<h2 id="64-位整型运算符"><a href="#64-位整型运算符" class="headerlink" title="64-位整型运算符"></a><strong>64-位整型运算符</strong></h2><p>适用于32位的整型运算符同样适用于64位整数</p>
+<h2 id="浮点运算符"><a href="#浮点运算符" class="headerlink" title="浮点运算符"></a><strong>浮点运算符</strong></h2><p>浮点运算遵循IEEE 754-2008标准，除了：</p>
+<ul>
+<li>IEEE 754-2008 6.2节建议操作从其操作数扩大NaN位, 允许这种操作，但不是必需的。</li>
+<li>WebAssembly使用“不间断”模式，浮点异常则不可观察。 特别是，不支持可替代的浮点异常处理属性，也不支持状态标志上的非计算运算符。 静默和信号NaN之间没有明显的差异。 然而，如IEEE 754-2008所规定，当发生总是产生正无穷大，负无穷大和NaN的结果值，以指示溢出，无效和除以零的情况。</li>
+<li>WebAssembly使用舍入到最接近，在一样接近的情况下偶数优先的舍入属性。除非另有说明。不支持非默认的定向舍入属性。</li>
+</ul>
+<p>未来可能会解除这些限制，实现 <a target="_blank" rel="noopener" href="http://webassembly.org/docs/future-features/#full-ieee-754-2008-conformance">完整的IEEE 754-2008支持</a> .</p>
+<p>请注意，WebAssembly并没有直接提供IEEE 754-2008要求的所有运算符。 但是，WebAssembly包括足够的功能支持剩余所需运算符的合理库实现。</p>
+<p>当除<code>neg</code>，<code>abs</code>或<code>copyinvalidsign</code>之外的任何算术运算的结果是NaN时，NaN的符号位和小数字段 fraction field （不包括尾数significand 的隐含前导位）计算如下：</p>
+<ul>
+<li>如果指令的所有NaN输入的小数字段最高有效位中为1， 剩余位全为0，或者没有NaN输入，则结果是具有非确定性符号位的NaN，小数字段最高有效位为1，剩余有效位全部为零。</li>
+<li>否则，结果是具有非确定性符号位的NaN，小数字段的最高有效位为1，剩余有效位为非确定值。</li>
+</ul>
+<p>32位浮点运算符包括如下这些：</p>
+<ul>
+<li><code>f32.add</code>: 加法</li>
+<li><code>f32.sub</code>: 减法</li>
+<li><code>f32.mul</code>: 乘法</li>
+<li><code>f32.div</code>: 除法</li>
+<li><code>f32.abs</code>: 绝对值</li>
+<li><code>f32.neg</code>:非</li>
+<li><code>f32.copysign</code>: <code>copysign(x, y)</code>返回的值由x的不带符号的部分和y的符号组成。</li>
+<li><code>f32.ceil</code>: 向上取整运算符</li>
+<li><code>f32.floor</code>: 向下取整运算符</li>
+<li><code>f32.trunc</code>: 朝零方向舍入到最接近的整数</li>
+<li><code>f32.nearest</code>: 向偶数舍入到最接近的整数</li>
+<li><code>f32.eq</code>: 有序和相等比较</li>
+<li><code>f32.ne</code>:无序或不等比较</li>
+<li><code>f32.lt</code>: 有序和小于比较</li>
+<li><code>f32.le</code>: 有序和小于等于比较</li>
+<li><code>f32.gt</code>: 有序和大于比较</li>
+<li><code>f32.ge</code>: 有序和大于等于比较</li>
+<li><code>f32.sqrt</code>: 平方根</li>
+<li><code>f32.min</code>: 最小值（位运算符）; 任何一个操作数是NaN, 则返回NaN</li>
+<li><code>f32.max</code>: 最大值（位运算符）; 任何一个操作数是NaN, 则返回NaN</li>
+</ul>
+<p>64位浮点运算符：</p>
+<ul>
+<li><code>f64.add</code>: 加法</li>
+<li><code>f64.sub</code>: 减法</li>
+<li><code>f64.mul</code>: 乘法</li>
+<li><code>f64.div</code>: 除法</li>
+<li><code>f64.abs</code>: 绝对值</li>
+<li><code>f64.neg</code>:非</li>
+<li><code>f64.copysign</code>: <code>copysign(x, y)</code>返回的值由x的不带符号的部分和y的符号组成。</li>
+<li><code>f64.ceil</code>: 向上取整运算符</li>
+<li><code>f64.floor</code>: 向下取整运算符</li>
+<li><code>f64.trunc</code>: 朝零方向舍入到最接近的整数</li>
+<li><code>f64.nearest</code>: 向偶数舍入到最接近的整数</li>
+<li><code>f64.eq</code>: 有序和相等比较</li>
+<li><code>f64.ne</code>:无序或不等比较</li>
+<li><code>f64.lt</code>: 有序和小于比较</li>
+<li><code>f64.le</code>: 有序和小于等于比较</li>
+<li><code>f64.gt</code>: 有序和大于比较</li>
+<li><code>f64.ge</code>: 有序和大于等于比较</li>
+<li><code>f64.sqrt</code>: 平方根</li>
+<li><code>f64.min</code>: 最小值（位运算符）; 任何一个操作数是NaN, 则返回NaN</li>
+<li><code>f64.max</code>: 最大值（位运算符）; 任何一个操作数是NaN, 则返回NaN</li>
+</ul>
+<p><code>min</code> 和 <code>max</code>运算符把t <code>-0.0</code> 视为小于 <code>0.0</code>.</p>
+<p>浮点数比较中，如果任何一个操作数是NaN, 则操作数被当作是<em>无序的</em>， 否则就是<em>有序的</em></p>
+<h2 id="数据类型转换，-截断，-重解释，-提升和降级"><a href="#数据类型转换，-截断，-重解释，-提升和降级" class="headerlink" title="数据类型转换， 截断， 重解释， 提升和降级"></a><strong>数据类型转换， 截断， 重解释， 提升和降级</strong></h2><ul>
+<li><code>i32.wrap/i64</code>: 将64位整数包装成32位整数</li>
+<li><code>i32.trunc_s/f32</code>:将32位浮点数截断成有符号32位整数</li>
+<li><code>i32.trunc_s/f64</code>: 将64位浮点数截断成有符号32位整数</li>
+<li><code>i32.trunc_u/f32</code>:将32位浮点数截断成无符号32位整数</li>
+<li><code>i32.trunc_u/f64</code>: 将64位浮点数截断成无符号32位整数</li>
+<li><code>i32.reinterpret/f32</code>: 将32位浮点数重解释为32位整数</li>
+<li><code>i64.extend_s/i32</code>: 将有符号32位整数扩展为64位整数</li>
+<li><code>i64.extend_u/i32</code>: 将无符号32位整数扩展为64位整数</li>
+<li><code>i64.trunc_s/f32</code>: 将32位浮点数截断为有符号64位整数</li>
+<li><code>i64.trunc_s/f64</code>: 将64位浮点数截断为有符号64位整数</li>
+<li><code>i64.trunc_u/f32</code>: 将32位浮点数截断为无符号64位整数</li>
+<li><code>i64.trunc_u/f64</code>: 将64位浮点数截断为无符号64位整数</li>
+<li><code>i64.reinterpret/f64</code>: 将64位浮点数重解释为64位整数</li>
+<li><code>f32.demote/f64</code>: 将64位浮点数降级为32位浮点数</li>
+<li><code>f32.convert_s/i32</code>: 将有符号32位整数转换为32位浮点数</li>
+<li><code>f32.convert_s/i64</code>: 将有符号64位整数转换为32位浮点数</li>
+<li><code>f32.convert_u/i32</code>: 将无符号32位整数转换为32位浮点数</li>
+<li><code>f32.convert_u/i64</code>: 将无符号64位整数转换为32位浮点数</li>
+<li><code>f32.reinterpret/i32</code>: 将32位整数重解释为32位浮点数</li>
+<li><code>f64.promote/f32</code>: 将32位浮点数提升为64位浮点数</li>
+<li><code>f64.convert_s/i32</code>: 将有符号32位整数转换为64位浮点数</li>
+<li><code>f64.convert_s/i64</code>: 将有符号64位整数转换为64位浮点数</li>
+<li><code>f64.convert_u/i32</code>: 将无符号32位整数转换为64位浮点数</li>
+<li><code>f64.convert_u/i64</code>: 将无符号64位整数转换为64位浮点数</li>
+<li><code>f64.reinterpret/i64</code>: 将64位整数重解释为64位浮点数</li>
+</ul>
+<p>整数值的包装和扩展、浮点值的提升和降级都总会成功。 如IEEE 754-2008所规定，浮点值的降级使用舍入到最近，偶数优先的舍入规则，可能溢出到无穷大或负无穷大。</p>
+<p>如果提升或降级的操作数是NaN，结果是具有以下符号位和小数字段（不包括尾数Significand的隐含前导位）的NaN：</p>
+<ul>
+<li>如果操作数的小数字段的最高有效位是1， 剩余位为0，则结果是具有非确定性符号位的NaN，小数字段最高有效位为1，剩余有效位全部为零。</li>
+<li>否则，结果是具有非确定性符号位的NaN，小数字段的最高有效位为1，剩余有效位为非确定值。</li>
+</ul>
+<p>重解释总是会成功。</p>
+<p>使用舍入到最近， 偶数优先的传入规则将整数转换为浮点数时， 转换总是会成功。</p>
+<p>从浮点数到整数的截断，IEEE 754-2008期望无效的运行符异常（例如，当浮点值为NaN， 或对超过整数范围值进行舍入操作）产生中断。</p>
+<h2 id="类型参数运算符"><a href="#类型参数运算符" class="headerlink" title="类型参数运算符"></a><strong>类型参数运算符</strong></h2><ul>
+<li><code>drop</code>: 一元运算符，放弃操作数的值</li>
+<li><code>select</code>: 三元运行符，有两个相同类型的操作数，再加上一个布尔（I32）条件判断。如果条件操作数不为零，则返回第一个操作数，否则返回第二个操作数。</li>
+</ul>
+<h2 id="不可达"><a href="#不可达" class="headerlink" title="不可达"></a><strong>不可达</strong></h2><ul>
+<li><code>unreachable</code>: 一个用于主动中断的指令。它应该被用在调用者明确知道不会有返回值的函数后面。用户代码无法捕捉 或处理这个中断， 即使未来有可能处理一些其它类别的中断或异常。</li>
+</ul>
+<blockquote>
+<p>[注]参考 LLVM UnreachableUnreachableInst - This function has undefined behavior.In particular, the presence of this instruction indicates some higher level knowledge that the end of the block cannot be reached.<a target="_blank" rel="noopener" href="http://llvm.org/docs/doxygen/html/classllvm_1_1UnreachableInst.html#details">http://llvm.org/docs/doxygen/html/classllvm_1_1UnreachableInst.html#details</a></p>
+</blockquote>
+<h2 id="校验"><a href="#校验" class="headerlink" title="校验"></a><strong>校验</strong></h2><p>模块二进制文件必须在编译之前进行_校验_。 校验可以确保模块定义明确，代码中不能有任何未定义的行为。 特别是，连同一些运行时检查，可以确保任何程序都不能访问或破坏它不拥有的内存。</p>
+<p>代码校验大多是根据类型检查、操作数堆栈的使用来定义的。 它依次检查每个指令，从栈中弹出指令预期的操作数，跟踪哪些新的操作数被推进栈中。 在函数开始时，堆栈为空; 末尾处它必须匹配函数的返回类型。 此外，<code>block</code>（或者是<code>look</code>、<code>if</code>）内的指令不能消耗<code>block</code>（或者是<code>look</code>、<code>if</code>）外部推入栈中的操作数。 在块的末尾，剩余的内部操作数必须与块签名相匹配。</p>
+<p>一种特殊情况是无条件控制转移(<code>br</code>, <code>br_table</code>, <code>return</code>, <code>unreachable</code>)，因为执行后不会继续。 这样的指令之后的堆栈是不受约束的，因此被认为是<em>多态的</em>。 后续指令依然必须要进行类型检查，但在概念上，为了检查连续的指令，任何类型的值都可以弹出多态堆栈。 多态堆栈也匹配块或函数末尾的任何可能的签名。 在块结束之后，堆栈由块签名和块之前的堆栈确定。</p>
+<p>有关校验的详情在<a target="_blank" rel="noopener" href="https://github.com/WebAssembly/spec/blob/master/interpreter/spec/valid.ml#L162">解释器/规范</a>中定义。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/WebAssembly/" rel="tag"># WebAssembly</a>
+              <a href="/tags/wat/" rel="tag"># wat</a>
+              <a href="/tags/wasm/" rel="tag"># wasm</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/frontend/performance/" rel="prev" title="性能优化">
+                  <i class="fa fa-chevron-left"></i> 性能优化
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/v8/Ignition/" rel="next" title="Ignition 设计文档">
+                  Ignition 设计文档 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">roadup</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
