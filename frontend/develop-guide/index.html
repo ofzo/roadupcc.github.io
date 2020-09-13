@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.roadup.cc","root":"/","scheme":"Muse","version":"8.0.0","exturl":false,"sidebar":{"position":"left","display":"hide","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+
+  <meta name="description" content="开发指南前端项目（主要是 react项目 ）目录结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="开发规范">
+<meta property="og:url" content="http://www.roadup.cc/frontend/develop-guide/index.html">
+<meta property="og:site_name" content="时光荏苒">
+<meta property="og:description" content="开发指南前端项目（主要是 react项目 ）目录结构">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://nvie.com/img/git-model@2x.png">
+<meta property="article:published_time" content="2018-12-13T14:11:41.000Z">
+<meta property="article:modified_time" content="2020-09-13T06:29:48.432Z">
+<meta property="article:author" content="roadup">
+<meta property="article:tag" content="前端，v8, Ignition, 字节码， frontend, 技术， 编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://nvie.com/img/git-model@2x.png">
+
+
+<link rel="canonical" href="http://www.roadup.cc/frontend/develop-guide/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>开发规范 | 时光荏苒</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">时光荏苒</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">君子知命不惧，日日自新</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-首页">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-归档">
+
+    <a href="/archives" rel="section"><i class="archives fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97"><span class="nav-number">1.</span> <span class="nav-text">开发指南</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">roadup</p>
+  <div class="site-description" itemprop="description">君子知命不惧，日日自新</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://www.roadup.cc/frontend/develop-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="roadup">
+      <meta itemprop="description" content="君子知命不惧，日日自新">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="时光荏苒">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          开发规范
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-12-13 14:11:41" itemprop="dateCreated datePublished" datetime="2018-12-13T14:11:41+00:00">2018-12-13</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-09-13 06:29:48" itemprop="dateModified" datetime="2020-09-13T06:29:48+00:00">2020-09-13</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="开发指南"><a href="#开发指南" class="headerlink" title="开发指南"></a>开发指南</h1><p>前端项目（主要是 react项目 ）目录结构</p>
+<a id="more"></a>
+
+<pre><code>&lt;项目目录&gt;
+  |——test/                        — 测试文件目录
+  |——mock/                        — mock数据目录
+  |——public/                      — 公共资源目录
+    |——index.html
+    |——favicon.ico
+  |——src/                         — 源代码目录
+    |——assets/                    — 静态资源目录
+      |——font/                    — 字体文件目录（可选）
+      |——images/                  — 图片目录（可选）
+    |——components/                — 公共组件目录
+      |——Table/                   — 组件目录
+        |——Row/                   — 子组件目录（可选）
+          |——index.js
+          |——icon.png
+          |——Row.scss
+        |——index.js
+        |——READEME.md
+      |——Table.scss
+    |——pages/                     — 页面目录
+      |——Home/                    — 子页面目录
+        |——index.js
+      |——index.js                 — 路由配置文件（可选）
+    |——services/                  — 数据服务目录
+    |——unitls/                    — 工具函数目录
+    |——index.js                   — 项目入口文件
+    |——main.scss                  — 全局样式表
+  |——.editorconfig                — 编辑器配置文件
+  |——.eslintrc                    — 代码格式规范文件
+  |——.gitignore                   — git忽略文件配置
+  |——webpack.config.js            — webpack配置文件
+  |——package.json                 — package
+  |——package-lock.json            — package lock
+  |——yarn.lock                    — yarn lock
+  |——ReadME.MD                    — Read me
+  |——...                          — 其他可选文件</code></pre>
+<hr>
+<p>规则说明 ：</p>
+<pre><code>标有👍的视为本次重构必须遵循的规则</code></pre>
+<p>文件规范</p>
+<p>👍 文件名统一使用驼峰命名法, 有特殊含义的文件可使用 . 分割，如测试文件 a.test.js</p>
+<pre><code>    命名原则的指导思想是使得你自己和工作组的每一个成员能够方便的理解每一个文件的意义
+    同类文件放在同一文件夹下</code></pre>
+<p>👍 项目结构，见目录结构<br>👍 静态资源的引入需经过webpack打包<br>👍 公共资源可以在html文件中直接链接, 可以不加 hsah ，以利用浏览器缓存, 可以部署到cdn上</p>
+<hr>
+<p>开发环境</p>
+<p>👍 <code>NODE_ENV</code>  用于定义build的模式，（development, production）<br>👍 <code>GENERATOR_SOURCEMAP</code> 用于定义是否开启 source-map 在本地环境、开发环境下开启<br>👍 条件编译使用</p>
+<pre><code>if (process.env.NODE_ENV === &quot;development&quot;)&#123;
+  // 仅在开发环境下需要搞的事情，在production环境下，不会出现这部分代码
+  // ...
+&#125;</code></pre>
+<p>👍 生产环境代码需压缩 — uglify<br>     生产环境下，原则上不允许出现alert，console等日志，可配置uglify自动drop<br>👍 应用缓存  对于直接引用第三方类库，可配置缓存 需要nginx配合<br>     代码分片  使用 import() 动态导入</p>
+<hr>
+<p>Html</p>
+<pre><code> 原则上遵守w3c规范，避免通篇div+span， 尽可能兼顾 seo、语义化</code></pre>
+<p>👍 标签名全部使用小写字母<br>👍 标签必须有正确嵌套的闭合标签， 或者使用自闭合标签<br>👍 必须有 title 标签<br>👍 在 head 中引入css文件</p>
+<p>👍 doctype 统一使用</p>
+<pre><code>&lt;!DOCTYPE html&gt;</code></pre>
+<p>👍 编码</p>
+<pre><code>&lt;meta charset=&quot;utf-8&quot; /&gt;</code></pre>
+<p>👍 meta 信息</p>
+<pre><code>&lt;meta name=&quot;renderer&quot; content=&quot;webkit|ie-comp|ie-stand&quot; /&gt;
+&lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot; /&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1,user-scalable=no, maxium-scale=1, minium-scale=1&quot; /&gt;
+&lt;meta name=&quot;keywords&quot; content=&quot;关键词,5个左右,单个8汉字以内&quot; /&gt;
+&lt;meta name=&quot;description&quot; content=&quot;网站描述，字数尽量空制在80个汉字，160个字符以内！&quot; /&gt;
+&lt;meta http-equiv=&quot;Cache-Control&quot; content=&quot;no-cache, must-revalidate&quot; /&gt;</code></pre>
+<p>👍 html 语言类型</p>
+<pre><code>&lt;html lang=&quot;zh-CN&quot; /&gt;</code></pre>
+<p>👍 css样式表引入， 必须添加 rel=“stylesheet” 明确指明类型</p>
+<pre><code>&lt;link rel=&quot;stylesheet&quot; src=&quot;page.css&quot; /&gt;</code></pre>
+<p>👍 favicon</p>
+<pre><code>&lt;link rel=&quot;shortcut icon&quot; href=&quot;favicon.ico&quot; /&gt;</code></pre>
+<p>👍 JavaScript 在body后引入 — polyfill 需在head中引入</p>
+<pre><code>&lt;script type=“text/javascript” src=&quot;polyfill.js&quot;&gt;&lt;/script&gt;</code></pre>
+<hr>
+<p>css</p>
+<pre><code> 避免使用计算属性值 cacl</code></pre>
+<p>👍 禁止使用 !important<br>👍 避免使用过多的 web font<br>     尽量避免使用z-index调整层级，z-index 的值不要超过150<br>👍 配置 autoprefixer 自动添加所需要的前缀<br>👍 选择器层级不超过3层, 方便阅读同时可以提高浏览器的渲染性能  — 非强制要求<br>👍 推荐使用 sass 预处理 css<br>👍 规则排序  <code>vs-code</code> 安装 <code>CSS comb</code> 插件可自动排序,    <code>&quot;``csscomb.preset&quot;=yandex</code></p>
+<pre><code>1. 定位信息/Positioning
+2. 展示类型及文档流相关/Display &amp; Flow
+3. 元素尺寸/Dimensions
+4. 边距边框/Margins, Padding, Borders, Outline
+5. 文字排版/Typographic Styles
+6. 背景/Backgrounds
+7. 其他如透明度，光标样式及衍生内容/Opacity, Cursors, Generated Content</code></pre>
+<hr>
+<p>javascript</p>
+<p>👍 编程思想： OOP / Functional<br>👍 必须通过eslint的格式校验<br>     同样的逻辑不写第二遍<br>     大数据或耗时较长的请求，可配置localStorage<br>👍 使用fetch发起请求， 使用cookie时，需添加option，credentials = “some-origin”</p>
+<p>React</p>
+<p><a target="_blank" rel="noopener" href="https://www.npmjs.com/package/eslint-plugin-react">https://www.npmjs.com/package/eslint-plugin-react</a></p>
+<pre><code>&quot;plugin:react/recommended&quot;</code></pre>
+<ul>
+<li>文件</li>
+</ul>
+<p>👍 组件名使用 PascalCase 命名法<br>👍 组件文件统一使用 .jsx或 .tsx 后缀名，文件名与default的组件同名</p>
+<ul>
+<li>组件</li>
+</ul>
+<p>👍 核心原则：高内聚、低耦合<br>     组件分 container 和 pure-component, container 包含业务逻辑, pure-component 只做内容展示<br>     每个文件只包含一个类组件，可以包含多个 stateless component 或挂载在类组件的静态属性上, 尽量<br>     使用 PureComponent<br>     不要使用 mixins， 使用Higher-Order Components<br>👍 相关组件写在同目录的其他文件中<br>👍 始终使用 JSX 语法，禁止使用 React.createElement<br>👍 尽可能使用stateless component<br>👍 组件必须命名, 禁止直接作为default导出<br>     简短的输出在行内直接三元运算符，运算逻辑简单的直接使用行内迭代<br>👍 结构复杂的组件需要拆分<br>     减少不必要的组件层级，React.Fragment， 可简写成&lt;&gt;&lt;/&gt;<br>👍 禁止使用React.createClass定义组件<br>     不要接收 ReactDOM.render 的返回值<br>👍 state 保持结构简单, 避免深层级结构<br>👍 受控组件需对外开放控制权限，默认不受限<br>     尽量避免在组件内联注释<br>👍 对外开放的组件必须描述 props 结构，并有注释<br>     禁止在componentDidMount 和 componentDidUpdate 中使用 setState<br>👍 禁止直接对 state 赋值<br>👍 不要使用字符串形式的 ref,  高版本中使用React.createRef,  尽量避免直接接触 DOM<br>👍 组件的 render 函数必须有返回值<br>👍 包含合成事件以外的事件监听, 必须在 componetWillUnmount 中移除 放置内存泄漏<br>     使用 Readme.md编写示例, react-styleguide 可直接生成文档,  jsdoc 或 type 用于开发环境下的 intellisense  <a target="_blank" rel="noopener" href="https://react-styleguidist.js.org/docs/getting-started.html">https://react-styleguidist.js.org/docs/getting-started.html</a></p>
+<ul>
+<li>属性</li>
+</ul>
+<p>👍 传递给 HTML 元素的自定义属性，需要添加 <code>data-</code> 前缀，React 不会渲染非标准属性<br>👍 组件必须声明 propTypes， 需为非必须属性指明默认值 defaultProps<br>👍 属性值为 true 时，可以省略值<br>     组件需接受样式注入，推荐以className属性的方式<br>     属性较少时可以行内排列， 较多时属性单独成行<br>     无子组件时使用自闭合标签<br>👍 避免使用index作为key， key应是可以唯一确定这条数据的<br>👍 禁止将setState、forceUpdate、replaceState等更新方法作为属性传递<br>👍 禁止通过 props 传递 this</p>
+<ul>
+<li>方法</li>
+</ul>
+<p>👍 lifecycle 按React的调用顺序排序，并集中<br>👍 事件响应以on开头，以 Handler 结尾，使用箭头函数定义 例如 onItemClickHandler=(event)=&gt;{}<br>👍 尽可能少用箭头函数定义方法<br>👍 禁用dangerouslySetInnerHTML   —   特殊需求除外（富文本编辑器）</p>
+<p>附：method sort</p>
+<pre><code>import React from &quot;react&quot;
+
+class ComponentName extends React.PureComponent&#123;
+    static propTypes = &#123;&#125;
+    static defaultProps = &#123;&#125;
+    constructor(props)&#123;
+        super()
+    &#125;
+
+    //life-cycle
+    componentWillMount()&#123;&#125;  //不推荐使用
+    componentDidMount()&#123;&#125;
+    componentWillReceiveProps(newProps)&#123;&#125;
+    shouldComponentUpdate()&#123; return true &#125;  // PureComponent 组件不允许出现
+    componentWillUpdate()&#123;&#125;
+    componentDidUpdate()&#123;&#125;
+    componentWillUnmount()&#123;&#125;
+
+    //event handler
+    onLeftClickHandler =event=&gt;&#123;&#125;
+
+    //... 其他辅助方法
+    methodName()&#123;&#125;
+
+    //render
+    render()&#123;
+        return &lt;div /&gt;
+    &#125;
+&#125;
+
+//需要对外暴露
+ComponentName.RelateComponent = function (props)&#123;
+    return &lt;div /&gt;
+&#125;
+
+//不需要对外暴露
+let RelateComponent = props =&gt; &lt;div&gt;RelateComponent&lt;/div&gt;</code></pre>
+<p>es lint 配置文件    <a target="_blank" rel="noopener" href="https://eslint.cn/">https://eslint.cn/</a></p>
+<pre><code>/** 文件说明
+  * 标有 ✅ 的规则视为错误，禁止出现
+  * 标有 🔨 的规则表示可以通过 --fix 自动修复
+  * 未标状态的视为当前阶段非必须遵守的
+  * LintType 值与构建环境相关
+  */
+let LintType = process.env.NODE_ENV === &quot;production&quot; ? &quot;error&quot; : &quot;warn&quot;
+
+module.exports = &#123;
+    root: true,
+    env: &#123;
+        browser: true,
+        commonjs: true,
+        es6: true,
+        jest: true
+    &#125;,
+    extends: [
+        &quot;eslint:recommended&quot;,  /**✅ eslint官方推荐*/
+        &quot;plugin:react/recommended&quot; /**✅ react官方推荐*/
+    ],
+    globals: &#123;
+        process: &#123;
+            env: &#123;
+                NODE_ENV: process.env.NODE_ENV
+            &#125;
+        &#125;
+    &#125;,
+    parserOptions: &#123;
+        ecmaFeatures: &#123;
+            jsx: true
+        &#125;,
+        ecmaVersion: 2018,
+        sourceType: &quot;module&quot;
+    &#125;,
+    plugins: [
+        &quot;react&quot;
+    ],
+    rules: &#123;
+        //✅ 🔨 缩进方式，用 4 个空格缩进
+        indent: [ &quot;error&quot;,  4 ],
+        //✅ 禁止使用tab缩进
+        &quot;no-tabs&quot;: &quot;error&quot;,
+        //✅ 换行符样式
+        &quot;linebreak-style&quot;: [ &quot;error&quot;, &quot;unix&quot; ],
+        //🔨 使用双引号
+        quotes: [ &quot;error&quot;, &quot;double&quot;],
+        //🔨 不需要末尾的 ;
+        semi: [ &quot;error&quot;, &quot;never&quot; ],
+        //✅ 强制使用 === 和 !==
+        eqeqeq: &quot;error&quot;,
+        //✅ 要求构造函数首字母大写
+        &quot;new-cap&quot;: LintType,
+        //✅ 要求调用无参构造函数时有圆括号
+        &quot;new-parens&quot;: &quot;error&quot;,
+        //✅ 禁止使用eval
+        &quot;no-eval&quot;: &quot;error&quot;,
+        //✅ 强制有效的 jsdoc 注释
+        &quot;require-jsdoc&quot;: [
+            &quot;error&quot;,
+            &#123;
+                require: &#123;
+                    FunctionDeclaration: true,
+                    MethodDefinition: false,
+                    ClassDeclaration: true,
+                    ArrowFunctionExpression: false,
+                    FunctionExpression: false
+                &#125;
+            &#125;
+        ],
+        &quot;valid-jsdoc&quot;: &quot;error&quot;,
+        //✅ generator 函数需要 yield
+        &quot;require-yield&quot;: &quot;error&quot;,
+        //✅ async 函数需要 yield
+        &quot;require-await&quot;: &quot;error&quot;,
+        //✅ 🔨 不使用var定义变量
+        &quot;no-var&quot;: &quot;error&quot;,
+        //✅ 禁止在注释中使用特定的警告术语 todo , fixme
+        &quot;no-warning-comments&quot;: LintType,
+        //🔨 文件末尾需要一个空行
+        &quot;eol-last&quot;: [ LintType, &quot;always&quot; ],
+        //禁止出现空函数
+        &quot;no-empty-function&quot;: &quot;error&quot;,
+        //🔨 禁止使用多个空格
+        &quot;no-multi-spaces&quot;: &quot;error&quot;,
+        //✅ 禁用 with
+        &quot;no-with&quot;: &quot;error&quot;,
+        //🔨 要求或禁止 “Yoda” 条件
+        yoda: &quot;error&quot;,
+        //✅ 禁止 this 关键字出现在类和类对象之外
+        &quot;no-invalid-this&quot;: &quot;error&quot;,
+        // 禁止在常规字符串中出现模板字面量占位符语法
+        &quot;no-template-curly-in-string&quot;: &quot;error&quot;,
+        //🔨 禁止冗余的括号
+        &quot;no-extra-parens&quot;: &quot;error&quot;,
+        //🔨 要求 IIFE 使用括号括起来
+        &quot;wrap-iife&quot;: &quot;error&quot;,
+        //🔨 禁止初始化为 undefined
+        &quot;no-undef-init&quot;: &quot;error&quot;,
+        //✅ 禁止将 undefined 作为标识符
+        &quot;no-undefined&quot;: &quot;error&quot;,
+        //✅ 禁用未定义的变量
+        &quot;no-undef&quot;: &quot;error&quot;,
+        // 链式调用独占一行
+        &quot;newline-per-chained-call&quot;: LintType,
+        // 警告多余的空行
+        &quot;no-multiple-empty-lines&quot;: &quot;warn&quot;,
+        //✅ 禁止使用 url 脚本
+        &quot;no-script-url&quot;: &quot;error&quot;,
+        //✅ 禁用自身比较
+        &quot;no-self-compare&quot;: &quot;error&quot;,
+        //✅ 禁止一层比变的循环条件
+        &quot;no-unmodified-loop-condition&quot;: &quot;error&quot;,
+        //✅ 禁止操作__proto__
+        &quot;no-proto&quot;: &quot;error&quot;,
+        //禁止用 new 调用Function
+        &quot;no-new-func&quot;: &quot;error&quot;,
+        //数组方法必须有返回值
+        &quot;array-callback-return&quot;: &quot;error&quot;,
+        &quot;max-len&quot;: [
+            LintType,
+            &#123;
+                code: 120,
+                tabWidth: 4,
+                ignoreUrls: true,
+                ignoreTemplateLiterals: true
+            &#125;
+        ],
+        //🔨 尽量使用 const
+        &quot;prefer-const&quot;: &quot;error&quot;,
+        //🔨 尽量使用 spread
+        &quot;prefer-spread&quot;: &quot;error&quot;,
+        // 禁用 alert 和 console -- production 环境下是错误 , development 环境下是警告
+        &quot;no-alert&quot;: LintType,
+        &quot;no-console&quot;: LintType,
+
+        //react
+        //props 的布尔值属性需要以 is 或 has 开头
+        &quot;react/boolean-prop-naming&quot;: [
+            &quot;error&quot;,
+            &#123; rule: &quot;^(is|has)[A-Z]([A-Za-z0-9]?)+&quot; &#125;
+        ],
+        //✅ 非 require 的属性,必须有默认值
+        &quot;react/require-default-props&quot;: [
+            &quot;error&quot;,
+            &#123; forbidDefaultForRequired: true &#125;
+        ],
+        &quot;react/default-props-match-prop-types&quot;: [
+            &quot;error&quot;,
+            &#123; allowRequiredDefaults: true &#125;
+        ],
+        //🔨 boolean 属性值为 true 时不需要写值
+        &quot;react/jsx-boolean-value&quot;: [&quot;error&quot;, &quot;never&quot;],
+        //✅ 必须添加 key 属性
+        &quot;react/jsx-key&quot;: &quot;error&quot;,
+        //✅ 禁用重复属性
+        &quot;react/jsx-no-duplicate-props&quot;: &quot;error&quot;,
+        //✅ 禁用 setinnerHTMl
+        &quot;react/no-danger-with-children&quot;: &quot;error&quot;,
+        &quot;react/no-danger&quot;: &quot;error&quot;,
+        //禁止在特定的生命周期中使用 setstate
+        &quot;react/no-did-mount-set-state&quot;: &quot;error&quot;,
+        &quot;react/no-did-update-set-state&quot;: &quot;error&quot;,
+        //✅ 禁止直接设置 state
+        &quot;react/no-direct-mutation-state&quot;: &quot;error&quot;,
+        //禁用 ReactDOM.render 的返回值
+        &quot;react/no-render-return-value&quot;: &quot;error&quot;,
+        //禁用字符串的 ref
+        &quot;react/no-string-refs&quot;: &quot;error&quot;,
+        //强制使用 stateless component
+        &quot;react/prefer-stateless-function&quot;: &quot;error&quot;,
+        //render 函数需要返回值
+        &quot;react/require-render-return&quot;: &quot;error&quot;,
+        //✅ 🔨 对 prop-types 排序
+        &quot;react/sort-prop-types&quot;: &quot;warn&quot;,
+        //✅ 🔨 对组件方法排序
+        &quot;react/sort-comp&quot;:&quot;warn&quot;
+        //强制 style prop 是一个 object
+        &quot;react/style-prop-object&quot;: &quot;error&quot;,
+        //禁止给无子元素标签添加子元素
+        &quot;react/void-dom-elements-no-children&quot;: &quot;error&quot;
+    &#125;
+&#125;</code></pre>
+<p>ReactStyleGuide</p>
+<pre><code>react 组件可视化文档， 可自动化生成组件文档
+
+ `yarn add react-styleguidist`</code></pre>
+<p>typescript 的组件 需要替换 parse</p>
+<pre><code>module.exports = &#123;
+    // 替换成 typescript的parse
+    propsParser: require(&#39;react-docgen-typescript&#39;).parse,
+    // component path
+    components: &quot;src/components/**/index.&#123;tsx,jsx&#125;&quot;,
+    // webpack:&#123;&#125;,
+    // 附加样式表
+    styles: &#123;
+        Playground: &#123;
+            preview: &#123;
+                padding: 0,
+                width: 375, // 针对手机端页面
+                fontFamily: &quot;PingFangSC-Regular&quot;
+            &#125;,
+        &#125;,
+    &#125;,
+&#125;</code></pre>
+<p>👍 react-guide 通过webpack来构建， 因此需要提供一个webpack的配置文件，react-guide 能自动读取根目录下的配置， 能自动识别通过create-react-app 创建的项目中的webpack配置，</p>
+<ul>
+<li>方便可安装react-scripts</li>
+<li>react-guide 仅支持webpack4以上版本，因此umi需要升级到2以上</li>
+</ul>
+<hr>
+<p>Git</p>
+<pre><code>推荐 git-flow</code></pre>
+<p><a target="_blank" rel="noopener" href="https://www.git-tower.com/learn/git/ebook/cn/command-line/advanced-topics/git-flow">https://www.git-tower.com/learn/git/ebook/cn/command-line/advanced-topics/git-flow</a></p>
+<p><img src="http://nvie.com/img/git-model@2x.png"></p>
+<p>git-flow 的工作模式不适合需要直接从 feature→release 的工作流程</p>
+<p><a target="_blank" rel="noopener" href="https://juejin.im/post/5bf7b2e9e51d45213e57be92">https://juejin.im/post/5bf7b2e9e51d45213e57be92</a></p>
+<pre><code>feat：新功能（feature）
+fix：修补bug
+docs：文档（documentation）
+style： 格式（不影响代码运行的变动）
+refactor：重构（即不是新增功能，也不是修改bug的代码变动）
+test：增加测试
+chore：构建过程或辅助工具的变动</code></pre>
+<p><a target="_blank" rel="noopener" href="http://jartto.wang/2018/07/08/git-commit/">http://jartto.wang/2018/07/08/git-commit/</a><br><a target="_blank" rel="noopener" href="https://danielkummer.github.io/git-flow-cheatsheet/index.zh_CN.html">https://danielkummer.github.io/git-flow-cheatsheet/index.zh_CN.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/frontend/redux/" rel="prev" title="Redux 源码解析">
+                  <i class="fa fa-chevron-left"></i> Redux 源码解析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/frontend/safety/" rel="next" title="前端安全">
+                  前端安全 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">roadup</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
